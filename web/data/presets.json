@@ -1,0 +1,109 @@
+{
+  "version": "1.0.0",
+  "source": "Nonaka × AI Knowledge Creation project — research/expansion-research.md",
+  "description": "Presets for the Knowledge Spiral Lab simulator. Each preset defines the starting conditions of an organization's knowledge spiral.",
+  "presets": [
+    {
+      "id": "notco",
+      "name": "NotCo / Giuseppe",
+      "tagline": "The accelerating human-machine spiral",
+      "icon": "🥛",
+      "description": "AI proposes formulations, chefs taste and judge, feedback returns to the model. Tacit machine knowledge becomes portable and sellable.",
+      "initial": {
+        "humans": 6,
+        "agents": 3,
+        "baRedundancy": 0.7,
+        "baChaos": 0.6,
+        "baAutonomy": 0.6,
+        "feedbackRate": 0.85,
+        "machineTransfer": 0.7,
+        "hallucinationRisk": 0.2
+      }
+    },
+    {
+      "id": "matsushita",
+      "name": "Matsushita Home Bakery",
+      "tagline": "The externalization archetype",
+      "icon": "🍞",
+      "description": "Apprenticeship leads to articulation: 'twist and stretch' becomes a product spec. The classic SECI spiral, mostly human.",
+      "initial": {
+        "humans": 8,
+        "agents": 1,
+        "baRedundancy": 0.5,
+        "baChaos": 0.4,
+        "baAutonomy": 0.5,
+        "feedbackRate": 0.6,
+        "machineTransfer": 0.1,
+        "hallucinationRisk": 0.1
+      }
+    },
+    {
+      "id": "siloed",
+      "name": "Siloed Org",
+      "tagline": "The stalled spiral",
+      "icon": "🏢",
+      "description": "Knowledge trapped in individuals and teams. Low redundancy, low chaos, no feedback loop. The spiral stalls at socialization.",
+      "initial": {
+        "humans": 5,
+        "agents": 0,
+        "baRedundancy": 0.15,
+        "baChaos": 0.1,
+        "baAutonomy": 0.3,
+        "feedbackRate": 0.1,
+        "machineTransfer": 0.0,
+        "hallucinationRisk": 0.0
+      }
+    },
+    {
+      "id": "ai-native",
+      "name": "AI-Native Org",
+      "tagline": "The machine-transfer heavy spiral",
+      "icon": "🤖",
+      "description": "Agents do combination and internalization at machine scale. Shared context layer (digital Ba) makes machine transfer the dominant movement.",
+      "initial": {
+        "humans": 3,
+        "agents": 6,
+        "baRedundancy": 0.6,
+        "baChaos": 0.5,
+        "baAutonomy": 0.7,
+        "feedbackRate": 0.7,
+        "machineTransfer": 0.9,
+        "hallucinationRisk": 0.35
+      }
+    },
+    {
+      "id": "green-milk",
+      "name": "Green Milk",
+      "tagline": "The context failure demo",
+      "icon": "🥬",
+      "description": "Machine knowledge without shared context. Giuseppe proposes dill; the milk is green. Watch the spiral stall on false externalization.",
+      "initial": {
+        "humans": 4,
+        "agents": 4,
+        "baRedundancy": 0.2,
+        "baChaos": 0.7,
+        "baAutonomy": 0.6,
+        "feedbackRate": 0.2,
+        "machineTransfer": 0.8,
+        "hallucinationRisk": 0.6
+      }
+    },
+    {
+      "id": "khanmigo",
+      "name": "Khanmigo Classroom",
+      "tagline": "Internalization engineered",
+      "icon": "🎓",
+      "description": "A tutor that guides, not answers. Explicit knowledge becomes tacit skill through measured practice. Internalization is the star.",
+      "initial": {
+        "humans": 10,
+        "agents": 2,
+        "baRedundancy": 0.5,
+        "baChaos": 0.3,
+        "baAutonomy": 0.4,
+        "feedbackRate": 0.7,
+        "machineTransfer": 0.3,
+        "hallucinationRisk": 0.15
+      }
+    }
+  ]
+}

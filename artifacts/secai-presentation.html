@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build the Spiral, Not the Answer — SECI × AI</title>
+<style>
+  :root {
+    --ivory:#FAF9F5; --white:#FFFFFF; --slate:#141413;
+    --clay:#D97757; --olive:#788C5D; --rust:#B04A3F; --oat:#E3DACC;
+    --gray-150:#F0EEE6; --gray-300:#D1CFC5; --gray-500:#87867F; --gray-700:#3D3D3A;
+    --border:1.5px solid var(--gray-300);
+    --radius-panel:12px; --radius-row:8px; --radius-pill:999px;
+    --serif: ui-serif, Georgia, "Times New Roman", serif;
+    --sans:  system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono:  ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { background:var(--ivory); color:var(--gray-700); font-family:var(--sans);
+         line-height:1.6; -webkit-font-smoothing:antialiased; }
+
+  /* ---------- hero ---------- */
+  .hero { background:var(--slate); color:#E8E6DF; padding:72px 24px 64px; }
+  .hero .inner { max-width:1080px; margin:0 auto; }
+  .hero .eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:.12em;
+                   text-transform:uppercase; color:var(--clay); margin-bottom:16px; }
+  .hero h1 { font-family:var(--serif); font-weight:500; letter-spacing:-.015em;
+             font-size:44px; line-height:1.15; max-width:840px; }
+  .hero h1 em { color:var(--clay); font-style:normal; }
+  .hero .sub { font-size:18px; color:var(--gray-300); max-width:720px; margin-top:18px; }
+  .hero .meta { margin-top:28px; font-family:var(--mono); font-size:12px;
+                color:var(--gray-500); display:flex; gap:18px; flex-wrap:wrap; }
+
+  /* ---------- nav ---------- */
+  nav { position:sticky; top:0; z-index:50; background:rgba(250,249,245,.94);
+        backdrop-filter:blur(6px); border-bottom:var(--border); }
+  nav .inner { max-width:1080px; margin:0 auto; display:flex; gap:4px;
+               overflow-x:auto; padding:0 8px; }
+  nav a { font-family:var(--mono); font-size:11.5px; letter-spacing:.04em;
+          text-transform:uppercase; color:var(--gray-500); text-decoration:none;
+          padding:13px 14px; white-space:nowrap; border-bottom:2px solid transparent; }
+  nav a:hover { color:var(--clay); }
+
+  /* ---------- sections ---------- */
+  section { max-width:1080px; margin:0 auto; padding:64px 24px; }
+  section.alt { background:var(--white); border-top:var(--border); border-bottom:var(--border); }
+  .eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:.1em;
+             text-transform:uppercase; color:var(--clay); margin-bottom:12px; }
+  h2 { font-family:var(--serif); font-weight:500; letter-spacing:-.01em;
+       font-size:30px; margin-bottom:14px; }
+  .lede { font-size:17px; max-width:760px; margin-bottom:28px; }
+
+  /* ---------- cards ---------- */
+  .card { background:var(--white); border:var(--border); border-radius:var(--radius-panel);
+          padding:20px; }
+  section.alt .card { background:var(--ivory); }
+  .grid { display:grid; gap:16px; }
+  .grid-2 { grid-template-columns:repeat(2,1fr); }
+  .grid-3 { grid-template-columns:repeat(3,1fr); }
+  .grid-4 { grid-template-columns:repeat(4,1fr); }
+  .card h3 { font-family:var(--serif); font-weight:500; font-size:19px; margin-bottom:8px; }
+  .card .mono-label { font-family:var(--mono); font-size:11px; letter-spacing:.08em;
+                      text-transform:uppercase; color:var(--gray-500); margin-bottom:6px; }
+
+  .callout { background:rgba(217,119,87,.06); border-left:3px solid var(--clay);
+             border-radius:var(--radius-row); padding:16px 18px; margin:20px 0; }
+  .callout.olive { background:rgba(120,140,93,.08); border-left-color:var(--olive); }
+  .callout.rust { background:rgba(176,74,63,.06); border-left-color:var(--rust); }
+  .callout .big { font-family:var(--serif); font-size:20px; font-weight:500; }
+
+  /* ---------- pills / badges ---------- */
+  .pill { display:inline-block; border-radius:var(--radius-pill); padding:2px 11px;
+          font-family:var(--mono); font-size:11px; background:var(--oat); }
+  .badge { display:inline-block; border-radius:6px; padding:1px 8px;
+           font-family:var(--mono); font-size:11px; }
+  .badge.mature { background:rgba(120,140,93,.18); color:var(--olive); }
+  .badge.emerging { background:rgba(217,119,87,.15); color:var(--clay); }
+  .badge.speculative { background:rgba(176,74,63,.12); color:var(--rust); }
+
+  /* ---------- tables ---------- */
+  .tablewrap { overflow-x:auto; background:var(--white); border:var(--border);
+               border-radius:var(--radius-panel); }
+  table { width:100%; border-collapse:collapse; min-width:680px; }
+  thead { background:var(--gray-150); }
+  th { font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.04em;
+       color:var(--gray-500); text-align:left; padding:11px 14px; }
+  td { padding:11px 14px; border-top:1px solid var(--gray-150); font-size:14px;
+       vertical-align:top; }
+
+  /* ---------- the SECI SVG quadrant ---------- */
+  .diagram-wrap { background:var(--white); border:var(--border); border-radius:var(--radius-panel);
+                  padding:24px; margin:20px 0; }
+  .diagram-wrap svg { width:100%; height:auto; display:block; }
+
+  /* ---------- footer ---------- */
+  footer { background:var(--slate); color:var(--gray-500); padding:40px 24px;
+           font-family:var(--mono); font-size:12px; }
+  footer .inner { max-width:1080px; margin:0 auto; display:flex; justify-content:space-between;
+                  flex-wrap:wrap; gap:12px; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width:860px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns:1fr; }
+    .hero h1 { font-size:32px; }
+    h2 { font-size:24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= HERO ================= -->
+<div class="hero">
+  <div class="inner">
+    <p class="eyebrow">Research presentation · Nonaka × AI · August 2026</p>
+    <h1>Build the <em>Spiral</em>, Not the Answer</h1>
+    <p class="sub">Does Nonaka &amp; Takeuchi's SECI model still explain how organizations create knowledge when half the knowledge workers are agents? And can LLMs crack the "we know more than we can tell" problem?</p>
+    <div class="meta">
+      <span>SECI × LLM × Agentic AI</span>
+      <span>·</span>
+      <span>7 real-world cases</span>
+      <span>·</span>
+      <span>30+ sources</span>
+      <span>·</span>
+      <span>4,000+ word paper</span>
+    </div>
+  </div>
+</div>
+
+<!-- ================= NAV ================= -->
+<nav>
+  <div class="inner">
+    <a href="#thesis">Thesis</a>
+    <a href="#theory">Theory</a>
+    <a href="#matrix">The Matrix</a>
+    <a href="#movements">9 Movements</a>
+    <a href="#cases">Cases</a>
+    <a href="#principle">Design Principle</a>
+    <a href="#takeaways">Takeaways</a>
+  </div>
+</nav>
+
+<!-- ================= THESIS ================= -->
+<section id="thesis">
+  <p class="eyebrow">01 · The thesis</p>
+  <h2>Nonaka is more relevant than ever — but the spiral must be extended</h2>
+  <p class="lede">Artificial intelligence introduces a fundamentally new object into the knowledge-creating company: <strong>tacit machine knowledge</strong> — knowledge machines hold that is hard to articulate, but that travels at software speed. That changes everything except the core job.</p>
+  <div class="grid grid-3">
+    <div class="card">
+      <p class="mono-label">Question 1</p>
+      <h3>Does SECI still explain?</h3>
+      <p>Yes — but only in an extended, <strong>nine-movement</strong> form where every human mode has a machine counterpart.</p>
+    </div>
+    <div class="card">
+      <p class="mono-label">Question 2</p>
+      <h3>Can LLMs externalize tacit knowledge?</h3>
+      <p>Partially. Machines <strong>elicit brilliantly but articulate unreliably</strong> — externalization must be hybrid, with humans as the arbiter of justification.</p>
+    </div>
+    <div class="card">
+      <p class="mono-label">Question 3</p>
+      <h3>What is ba when agents participate?</h3>
+      <p>It is <strong>infrastructure</strong>: a governed, permission-aware shared context layer — a graph, an MCP server, a memory policy.</p>
+    </div>
+  </div>
+  <div class="callout">
+    <p class="big">"The knowledge-creating company's role was always to provide the shared context in which different kinds of knowledge feed off each other. The AI age raises the stakes on context — and makes it engineerable."</p>
+  </div>
+</section>
+
+<!-- ================= THEORY ================= -->
+<section id="theory" class="alt">
+  <p class="eyebrow">02 · The theory</p>
+  <h2>The SECI model: four modes of knowledge conversion</h2>
+  <p class="lede">Built from Polanyi's "we can know more than we can tell" (1966) and Nonaka &amp; Takeuchi's study of Japanese innovation (1995). Knowledge is created by converting between tacit and explicit knowledge.</p>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 900 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SECI quadrant diagram">
+      <!-- quadrant backgrounds -->
+      <rect x="40" y="40" width="400" height="190" rx="12" fill="#FAF9F5" stroke="#D1CFC5" stroke-width="1.5"/>
+      <rect x="460" y="40" width="400" height="190" rx="12" fill="#FAF9F5" stroke="#D1CFC5" stroke-width="1.5"/>
+      <rect x="40" y="250" width="400" height="190" rx="12" fill="#FAF9F5" stroke="#D1CFC5" stroke-width="1.5"/>
+      <rect x="460" y="250" width="400" height="190" rx="12" fill="#FAF9F5" stroke="#D1CFC5" stroke-width="1.5"/>
+      <!-- axis labels -->
+      <text x="240" y="26" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#87867F" text-anchor="middle" letter-spacing="2">TACIT</text>
+      <text x="660" y="26" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#87867F" text-anchor="middle" letter-spacing="2">EXPLICIT</text>
+      <text x="18" y="130" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#87867F" transform="rotate(-90 18 130)" text-anchor="middle" letter-spacing="2">TACIT</text>
+      <text x="18" y="350" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#87867F" transform="rotate(-90 18 350)" text-anchor="middle" letter-spacing="2">EXPLICIT</text>
+      <!-- Socialization -->
+      <text x="240" y="100" font-family="Georgia,serif" font-size="26" fill="#141413" text-anchor="middle" font-weight="500">SOCIALIZATION</text>
+      <text x="240" y="128" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#87867F" text-anchor="middle">tacit → tacit</text>
+      <text x="240" y="158" font-family="system-ui,sans-serif" font-size="14" fill="#3D3D3A" text-anchor="middle">Apprenticeship · observation ·</text>
+      <text x="240" y="180" font-family="system-ui,sans-serif" font-size="14" fill="#3D3D3A" text-anchor="middle">shared experience</text>
+      <text x="240" y="212" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#788C5D" text-anchor="middle">AI: meeting copilots, RLHF</text>
+      <!-- Externalization -->
+      <text x="660" y="100" font-family="Georgia,serif" font-size="26" fill="#D97757" text-anchor="middle" font-weight="500">EXTERNALIZATION</text>
+      <text x="660" y="128" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#87867F" text-anchor="middle">tacit → explicit</text>
+      <text x="660" y="158" font-family="system-ui,sans-serif" font-size="14" fill="#3D3D3A" text-anchor="middle">Metaphor · dialogue · models</text>
+      <text x="660" y="180" font-family="system-ui,sans-serif" font-size="14" fill="#3D3D3A" text-anchor="middle">"twist and stretch"</text>
+      <text x="660" y="212" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#D97757" text-anchor="middle">AI: expert-interview LLMs</text>
+      <!-- Combination -->
+      <text x="240" y="310" font-family="Georgia,serif" font-size="26" fill="#141413" text-anchor="middle" font-weight="500">COMBINATION</text>
+      <text x="240" y="338" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#87867F" text-anchor="middle">explicit → explicit</text>
+      <text x="240" y="368" font-family="system-ui,sans-serif" font-size="14" fill="#3D3D3A" text-anchor="middle">Synthesizing documents,</text>
+      <text x="240" y="390" font-family="system-ui,sans-serif" font-size="14" fill="#3D3D3A" text-anchor="middle">databases, specs</text>
+      <text x="240" y="422" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#788C5D" text-anchor="middle">AI: RAG, Glean, KGs — MATURE</text>
+      <!-- Internalization -->
+      <text x="660" y="310" font-family="Georgia,serif" font-size="26" fill="#141413" text-anchor="middle" font-weight="500">INTERNALIZATION</text>
+      <text x="660" y="338" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#87867F" text-anchor="middle">explicit → tacit</text>
+      <text x="660" y="368" font-family="system-ui,sans-serif" font-size="14" fill="#3D3D3A" text-anchor="middle">Learning by doing ·</text>
+      <text x="660" y="390" font-family="system-ui,sans-serif" font-size="14" fill="#3D3D3A" text-anchor="middle">embodied mastery</text>
+      <text x="660" y="422" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#D97757" text-anchor="middle">AI: Khanmigo, adaptive tutors</text>
+      <!-- spiral arrows -->
+      <path d="M 240 235 L 240 250" stroke="#D97757" stroke-width="2.5" marker-end="url(#arrowR)"/>
+      <path d="M 460 140 L 445 140" stroke="#D97757" stroke-width="2.5" marker-end="url(#arrowR)"/>
+      <path d="M 240 445 L 240 430" stroke="#D97757" stroke-width="2.5" marker-end="url(#arrowR)"/>
+      <path d="M 660 445 L 660 430" stroke="#D97757" stroke-width="2.5" marker-end="url(#arrowR)"/>
+      <defs>
+        <marker id="arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#D97757"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+  <div class="grid grid-4">
+    <div class="card">
+      <p class="mono-label">The spiral</p>
+      <p>Each cycle escalates: <strong>individual → group → organization → inter-organization</strong>.</p>
+    </div>
+    <div class="card">
+      <p class="mono-label">Ba</p>
+      <p>Shared context "in motion" — physical, virtual, mental — where knowledge acquires meaning.</p>
+    </div>
+    <div class="card">
+      <p class="mono-label">Enabling conditions</p>
+      <p>Intention, autonomy, creative chaos, redundancy, requisite variety.</p>
+    </div>
+    <div class="card">
+      <p class="mono-label">Known weak points</p>
+      <p>Gourlay's critique: thin empirics, the conversion metaphor, hard to falsify. Tsoukas: entanglement.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MATRIX ================= -->
+<section id="matrix">
+  <p class="eyebrow">03 · The matrix</p>
+  <h2>SECI × AI: what actually exists in 2026</h2>
+  <p class="lede">Each quadrant mapped against concrete AI systems, with maturity. Only Combination is industrialized; the others are emerging — and the bottleneck is shared context, not raw knowledge.</p>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Element</th>
+          <th>AI instantiations</th>
+          <th>Maturity</th>
+          <th>Bottleneck</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Socialization</strong><br><span style="font-family:var(--mono);font-size:11px;color:var(--gray-500)">tacit → tacit</span></td>
+          <td>Meeting copilots (Copilot, Otter, Fireflies); pair-programming agents; RLHF preference transfer; shadowing agents</td>
+          <td><span class="badge emerging">Emerging</span></td>
+          <td>Capture mature; tacit transfer partial</td>
+        </tr>
+        <tr>
+          <td><strong>Externalization</strong><br><span style="font-family:var(--mono);font-size:11px;color:var(--gray-500)">tacit → explicit</span></td>
+          <td>Expert-interview LLMs; ontology elicitation; meeting-to-doc pipelines; interview-question generation</td>
+          <td><span class="badge emerging">Emerging</span></td>
+          <td>Works for shallow tacit; <strong>hallucination = false externalization</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Combination</strong><br><span style="font-family:var(--mono);font-size:11px;color:var(--gray-500)">explicit → explicit</span></td>
+          <td>RAG; Glean; knowledge graphs (Atlan, Fabric IQ); Shelf.io; agentic research pipelines</td>
+          <td><span class="badge mature">Mature</span></td>
+          <td>Grounding quality in specialized domains</td>
+        </tr>
+        <tr>
+          <td><strong>Internalization</strong><br><span style="font-family:var(--mono);font-size:11px;color:var(--gray-500)">explicit → tacit</span></td>
+          <td>Khanmigo; Duolingo Max; simulated practice; agent rule-learning (arXiv 2607.13091)</td>
+          <td><span class="badge emerging">Emerging</span></td>
+          <td>Requires doing; thin in enterprise KM</td>
+        </tr>
+        <tr>
+          <td><strong>Ba / shared context</strong><br><span style="font-family:var(--mono);font-size:11px;color:var(--gray-500)">the field</span></td>
+          <td>Atlan Agent Context Layer; Fabric IQ; Augment cross-agent memory; MCP servers</td>
+          <td><span class="badge emerging">Emerging</span></td>
+          <td>Fragmented substrates; governance unsolved</td>
+        </tr>
+        <tr>
+          <td><strong>Machine transfer</strong><br><span style="font-family:var(--mono);font-size:11px;color:var(--gray-500)">tacit machine → tacit machine</span></td>
+          <td>Model distillation; agent memory sharing; API-portable capabilities (NotCo AI)</td>
+          <td><span class="badge emerging">Emerging→Mature</span></td>
+          <td>Portability solved; meaning/context unsolved</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout olive" style="margin-top:24px">
+    <p><strong>The headline numbers:</strong> LLM interviews elicit in ~10 min what took experts ~35 min (Semantic Web Journal) · hallucination: <strong>legal 6.4% vs general 0.8%</strong> (Glean) · Atlan's grounded agent: <strong>5× accuracy, unchanged model and data</strong> · Khanmigo: <strong>6.1% next-item gain</strong> from learner-state signals.</p>
+  </div>
+</section>
+
+<!-- ================= MOVEMENTS ================= -->
+<section id="movements" class="alt">
+  <p class="eyebrow">04 · The extension</p>
+  <h2>Tacit machine knowledge adds five movements</h2>
+  <p class="lede">Machines now "know more than they can tell" (Chatterji, Rock &amp; Talamàs 2026, arXiv 2606.29227). Unlike human tacit knowledge, machine tacit knowledge is <strong>portable at software speed</strong> — a second spiral interleaved with the human one.</p>
+  <div class="grid grid-3">
+    <div class="card">
+      <p class="mono-label">1 · Encoding</p>
+      <h3>explicit human → tacit machine</h3>
+      <p>Pre-training, fine-tuning, RAG ingestion on enterprise corpora.</p>
+    </div>
+    <div class="card">
+      <p class="mono-label">2 · Embedding</p>
+      <h3>tacit human → tacit machine</h3>
+      <p>RLHF preference rankings, expert demonstrations, accept/reject of agent output.</p>
+    </div>
+    <div class="card">
+      <p class="mono-label">3 · Extraction</p>
+      <h3>tacit machine → explicit human</h3>
+      <p>Generated recipes, code, memos, hypotheses humans inspect and test.</p>
+    </div>
+    <div class="card">
+      <p class="mono-label">4 · Assimilation</p>
+      <h3>tacit machine → tacit human</h3>
+      <p>Developers internalizing agent-suggested patterns into personal skill.</p>
+    </div>
+    <div class="card">
+      <p class="mono-label">5 · Machine transfer</p>
+      <h3>tacit machine → tacit machine</h3>
+      <p>Model distillation, agent memory sharing, API-portable capabilities.</p>
+    </div>
+    <div class="card" style="border-left:4px solid var(--clay)">
+      <p class="mono-label">The result</p>
+      <h3>Nine movements, one spiral</h3>
+      <p>Externalization is no longer the only bottleneck — machine knowledge becomes organizational <em>without</em> articulation, if shared context exists.</p>
+    </div>
+  </div>
+  <div class="callout rust">
+    <p><strong>False externalization</strong> is the new failure mode of the spiral: a hallucination is machine output claiming explicit status without ground truth. Green milk was a <em>context</em> failure; hallucination is a <em>truth</em> failure. Both are fixed by the same mechanism — a shared, grounded, human-auditable context.</p>
+  </div>
+</section>
+
+<!-- ================= CASES ================= -->
+<section id="cases">
+  <p class="eyebrow">05 · Real-world evidence</p>
+  <h2>Seven cases, one pattern: AI as participant, not tool</h2>
+  <p class="lede">From food tech to education, the extended spiral shows up in production — and the failures are as instructive as the wins.</p>
+  <div class="grid grid-2">
+    <div class="card" style="border-left:4px solid var(--clay)">
+      <p class="mono-label">Food tech · The flagship</p>
+      <h3>NotCo / Giuseppe</h3>
+      <p>AI proposes a milk formula with dill — <strong>the milk is green</strong>. Chefs' tacit judgment re-enters as feedback; the pineapple-and-cabbage NotMilk launches; $1.5B valuation; the spiral transfers to Barry Callebaut (2025).</p>
+      <p style="margin-top:10px"><span class="pill">all 4 human + all 5 machine movements</span></p>
+    </div>
+    <div class="card">
+      <p class="mono-label">Consumer appliances · The archetype</p>
+      <h3>Matsushita Home Bakery</h3>
+      <p>Tanaka's "twist and stretch" remains the externalization benchmark. AI lowers articulation cost from months to minutes — but sharpens the ineffability critique: machines instantiate skill, not understanding.</p>
+      <p style="margin-top:10px"><span class="pill">externalization</span></p>
+    </div>
+    <div class="card">
+      <p class="mono-label">Software · Industrial-scale externalization</p>
+      <h3>Coding agents → rules</h3>
+      <p>Every accepted review comment becomes a behavioral rule: <strong>0% recurrence</strong> of ruled-against errors across 11 sessions; <strong>39% of rules from human reviewers</strong>. Risk: knowledge ossification, synthetic folklore.</p>
+      <p style="margin-top:10px"><span class="pill">externalization + machine transfer</span></p>
+    </div>
+    <div class="card">
+      <p class="mono-label">Banking / retail · Enterprise scale</p>
+      <h3>JPMorgan &amp; Walmart agents</h3>
+      <p>Fraud, loans, shopping — combination and internalization run continuously at machine speed. Aral: ~50% productivity gains, but a live trust gap. Junior-banker work concentrates at the judgment boundary.</p>
+      <p style="margin-top:10px"><span class="pill">combination + internalization</span></p>
+    </div>
+    <div class="card">
+      <p class="mono-label">Enterprise KM · Digital Ba</p>
+      <h3>Glean · Shelf.io · Atlan</h3>
+      <p>"The model did not change. The data did not change. The context infrastructure changed." — <strong>5× agent accuracy</strong>. KM rebuilt for machines first: quality scoring, lineage, MCP servers.</p>
+      <p style="margin-top:10px"><span class="pill">combination + digital ba</span></p>
+    </div>
+    <div class="card">
+      <p class="mono-label">Consulting / manufacturing · Elicitation</p>
+      <h3>LLM expert interviews</h3>
+      <p>Machines elicit brilliantly (faster, denser, more structured — 94.9% recall in one prototype) but articulate unreliably: AI-only ontologies contain hallucinations. Hybrid human-validated loops win.</p>
+      <p style="margin-top:10px"><span class="pill">externalization</span></p>
+    </div>
+    <div class="card" style="border-left:4px solid var(--olive)">
+      <p class="mono-label">Education · Engineered internalization</p>
+      <h3>Khanmigo</h3>
+      <p>A tutor that "doesn't just give answers." Structured learner-state signals → <strong>6.1% next-item correctness</strong>. Internalization can be measured — but practice remains irreplaceable.</p>
+      <p style="margin-top:10px"><span class="pill">internalization + assimilation</span></p>
+    </div>
+    <div class="card">
+      <p class="mono-label">The synthesis</p>
+      <h3>Five analytic themes</h3>
+      <p>① AI is a participant, not a tool · ② Externalization bifurcates (fast but fallible) · ③ Internalization becomes measurable · ④ The Ba is now infrastructure · ⑤ <strong>Trust is the rate-limiter</strong> — belief is a governance property now.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PRINCIPLE ================= -->
+<section id="principle" class="alt">
+  <p class="eyebrow">06 · The design principle</p>
+  <h2>SECI-as-architecture: build the spiral, not the answer</h2>
+  <p class="lede">Current agentic KM products are search engines wearing a knowledge-creation costume. A system that respects the spiral is a closed loop over all nine movements:</p>
+  <div class="grid grid-2">
+    <div class="card">
+      <p class="mono-label">1 · Truth-conditioned extraction</p>
+      <p>Every extracted claim cites its explicit source (Glean-style grounding). Hallucination becomes a detectable event, not an existential risk.</p>
+    </div>
+    <div class="card">
+      <p class="mono-label">2 · Feedback as first-class substrate</p>
+      <p>Every accept/reject/correct/rate action returns to the model or memory layer. The system measurably learns your tacit preferences with use.</p>
+    </div>
+    <div class="card">
+      <p class="mono-label">3 · Ba as governed infrastructure</p>
+      <p>A semantic layer (ontology, glossary, lineage) plus cross-agent memory — versioned, diffable, reviewable, revertible. <strong>Disposable agents, durable memory.</strong></p>
+    </div>
+    <div class="card">
+      <p class="mono-label">4 · Respect the knowledge classes</p>
+      <p>Stable, decision, operational, workstream, ephemeral — different lifecycles. Mixing them breeds synthetic folklore and knowledge ossification.</p>
+    </div>
+    <div class="card">
+      <p class="mono-label">5 · Close the loop into practice</p>
+      <p>Don't stop at answering — generate tutoring, simulations, agent-executed tasks with review. Measure internalization by action traces, not retrieval logs.</p>
+    </div>
+    <div class="card">
+      <p class="mono-label">6 · Middle manager → spiral engineer</p>
+      <p>Someone owns the spiral's rhythm: pairing the model's wild proposals with domain judgment, curating context, treating green milk as a knowledge event.</p>
+    </div>
+    <div class="card" style="border-left:4px solid var(--olive)">
+      <p class="mono-label">7 · Agent memory as a governed asset</p>
+      <p>Uninspectable memory is a liability. Governed, audited, shared memory is the machine-side crystallization of the firm's learning — portable, combinable, valuable.</p>
+    </div>
+    <div class="card" style="border-left:4px solid var(--clay); background:rgba(217,119,87,.05)">
+      <p class="mono-label">The verdict</p>
+      <h3>Build the spiral, not the answer</h3>
+      <p>Judge the system by whether human and machine knowledge are <em>measurably feeding each other</em> in an accelerating, grounded, governed loop.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TAKEAWAYS ================= -->
+<section id="takeaways">
+  <p class="eyebrow">07 · Takeaways</p>
+  <h2>What this means for practitioners</h2>
+  <div class="grid grid-3">
+    <div class="card">
+      <p class="mono-label">For KM leaders</p>
+      <p>Stop building document repositories. Build the <strong>shared context layer</strong> — governed graphs, lineage, freshness — because that is now the scarce resource.</p>
+    </div>
+    <div class="card">
+      <p class="mono-label">For AI builders</p>
+      <p>Design closed loops, not answer machines: grounded extraction in, feedback substrate through, practice generation out. <strong>Human review is your highest-quality signal.</strong></p>
+    </div>
+    <div class="card">
+      <p class="mono-label">For researchers</p>
+      <p>The next frontier: measuring internalization by action traces, governing machine memory against synthetic folklore, and testing externalization against the Matsushita benchmark.</p>
+    </div>
+  </div>
+  <div class="callout">
+    <p class="big">The Matsushita test: did the AI artifact preserve, distort, or fabricate the expert's tacit knowledge?</p>
+    <p style="margin-top:8px">Every externalization technology inherits this question. The answer is almost always "distort, without validation" — and that is exactly why the human loop is not optional.</p>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="inner">
+    <span>Nonaka × AI · Knowledge Creation in the Age of LLMs &amp; Agentic AI</span>
+    <span>Full paper: results/paper.md · Sources: research/sources.md</span>
+  </div>
+</footer>
+
+</body>
+</html>
