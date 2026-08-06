@@ -1,0 +1,54 @@
+name: Bug Report
+description: File a bug report to help us improve the simulator
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: input
+    id: browser
+    attributes:
+      label: Browser & OS
+      description: What browser and OS are you using?
+      placeholder: "Chrome 128 on macOS 15"
+    validations:
+      required: true
+  - type: input
+    id: preset
+    attributes:
+      label: Simulator Preset
+      description: Which preset were you using (or custom settings)?
+      placeholder: "NotCo / Siloed Org / Custom"
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened? Include screenshots if possible.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: How can someone reproduce this?
+      placeholder: |
+        1. Go to the simulator
+        2. Select "NotCo" preset
+        3. Drag Humans slider to 10
+        4. See error...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console Logs
+      description: Copy any errors from browser DevTools console
+      render: shell

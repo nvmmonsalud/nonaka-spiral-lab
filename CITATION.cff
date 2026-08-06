@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+title: "The Knowledge Spiral Lab: An Interactive SECI × AI Simulator"
+message: "If you use this software in your research, please cite it."
+type: software
+authors:
+  - family-names: Monsalud
+    given-names: Neil Vincent
+    orcid: ""
+identifiers:
+  - type: url
+    value: "https://github.com/nvmmonsalud/nonaka-spiral-lab"
+  - type: url
+    value: "https://nonaka-spiral-lab.vercel.app"
+date-released: 2026-08-04
+version: 1.0.0
+repository-code: "https://github.com/nvmmonsalud/nonaka-spiral-lab"
+abstract: "An interactive simulation of Nonaka & Takeuchi's SECI knowledge-creation model extended with tacit machine knowledge for the age of AI agents."
+keywords:
+  - knowledge-management
+  - seci-model
+  - nonaka-takeuchi
+  - ai-agents
+  - knowledge-creation
+  - organizational-learning
+  - tacit-knowledge
+license: MIT

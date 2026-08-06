@@ -1,0 +1,80 @@
+name: Simulator Preset
+description: Submit a real-world SECI scenario preset for the simulator
+labels: [preset, enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for contributing a preset! Presets are how the community shares real-world knowledge-creation patterns. You'll be credited in the app.
+  - type: input
+    id: name
+    attributes:
+      label: Preset Name
+      description: Short, descriptive name (e.g. "Toyota's Lean KM", "Pixar's Braintrust")
+      placeholder: "My Org's Knowledge Spiral"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What org or scenario does this represent? What makes it interesting?
+    validations:
+      required: true
+  - type: input
+    id: humans
+    attributes:
+      label: Humans (1-20)
+      description: Number of human knowledge carriers
+      placeholder: "10"
+    validations:
+      required: true
+  - type: input
+    id: agents
+    attributes:
+      label: AI Agents (1-20)
+      description: Number of AI agent knowledge carriers
+      placeholder: "5"
+    validations:
+      required: true
+  - type: input
+    id: redundancy
+    attributes:
+      label: Ba · Redundancy (0-100)
+      description: Shared meaning / overlap score
+      placeholder: "70"
+  - type: input
+    id: chaos
+    attributes:
+      label: Ba · Creative Chaos (0-100)
+      description: Turbulence / creative friction score
+      placeholder: "40"
+  - type: input
+    id: autonomy
+    attributes:
+      label: Ba · Autonomy (0-100)
+      description: Self-organization score
+      placeholder: "60"
+  - type: input
+    id: feedback
+    attributes:
+      label: Feedback Loop (0-100)
+      description: How much human judgment returns to the AI
+      placeholder: "50"
+  - type: input
+    id: transfer
+    attributes:
+      label: Machine Transfer (0-100)
+      description: How easily agent knowledge crosses boundaries
+      placeholder: "30"
+  - type: input
+    id: hallucination
+    attributes:
+      label: Hallucination Risk (0-100)
+      description: Risk of false externalization
+      placeholder: "10"
+  - type: textarea
+    id: source
+    attributes:
+      label: Source
+      description: Where does this scenario come from? Link to a paper, article, or describe your experience.

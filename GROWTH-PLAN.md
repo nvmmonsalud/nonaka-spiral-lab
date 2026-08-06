@@ -235,17 +235,17 @@ Target: **3-6 months from now** (February–May 2027)
 
 | Area | Status | Target | Notes |
 |------|--------|--------|-------|
-| GROWTH-PLAN.md | ✅ Done | This file | Comprehensive growth strategy |
-| CONTRIBUTING.md | ⬜ Pending | Next step | Will guide first-time contributors |
-| CODE_OF_CONDUCT.md | ⬜ Pending | Month 1 | Contributor Covenant |
-| SECURITY.md | ⬜ Pending | Month 1 | Security disclosure process |
-| Issue templates | ⬜ Pending | Month 1 | Bug + feature + preset templates |
-| GH Project Board | ⬜ Pending | Month 1 | Public roadmap |
-| HN Show HN post | ⬜ Pending | Month 2 | Title drafted above |
-| Blog post | ⬜ Pending | Month 2 | "Building the Knowledge Spiral" |
-| Demo video | ⬜ Pending | Month 2 | 30-60s screen recording |
-| Academic citation | ⬜ Pending | Month 1 | CITATION.cff + README section |
-| Topic tags added | ⬜ Pending | Month 1 | Add to repo settings |
+|| GROWTH-PLAN.md | ✅ Done | This file | Comprehensive growth strategy |
+|| CONTRIBUTING.md | ✅ Done | This file | First-time contributor guide |
+|| CODE_OF_CONDUCT.md | ✅ Done | Month 1 | Contributor Covenant — committed |
+|| SECURITY.md | ⬜ Pending | Month 1 | Security disclosure process |
+|| Issue templates | ✅ Done | Month 1 | Bug + feature + preset templates — committed |
+|| GH Project Board | ⬜ Pending | Month 1 | Public roadmap |
+|| HN Show HN post | ⬜ Pending | Month 2 | Title drafted above |
+|| Blog post | ⬜ Pending | Month 2 | "Building the Knowledge Spiral" |
+|| Demo video | ⬜ Pending | Month 2 | 30-60s screen recording |
+|| Academic citation | ✅ Done | Month 1 | CITATION.cff — committed |
+|| Topic tags added | ⬜ Pending | Month 1 | Add via GitHub repo settings |
 
 ---
 
