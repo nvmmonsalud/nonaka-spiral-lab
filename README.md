@@ -1,5 +1,9 @@
 # The Knowledge Spiral Lab — SECI × AI
 
+[![CI](https://github.com/nvmmonsalud/nonaka-spiral-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/nvmmonsalud/nonaka-spiral-lab/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-olive.svg)](LICENSE)
+[![Live demo](https://img.shields.io/badge/demo-nonaka--spiral--lab.vercel.app-D97757)](https://nonaka-spiral-lab.vercel.app)
+
 **Build the spiral, not the answer.**
 
 An interactive simulation of Nonaka & Takeuchi's SECI model (Socialization →
@@ -58,6 +62,31 @@ npm run dev
 # → http://localhost:3000
 ```
 
+## Deploy your own
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fnvmmonsalud%2Fnonaka-spiral-lab&root-directory=web&project-name=nonaka-spiral-lab)
+
+The app is pure client-side, so it deploys anywhere — one-click Vercel, a fork
+with auto-deploy via GitHub Actions, or static export to any host. Details,
+including how to ship custom presets in a private deployment, are in
+[DEPLOYMENT.md](DEPLOYMENT.md).
+
+## Contributing
+
+Contributions are welcome — you don't need to write code:
+
+- **Submit a simulator preset** — model a real organization's knowledge spiral
+  via the [preset issue form](https://github.com/nvmmonsalud/nonaka-spiral-lab/issues/new?template=simulator-preset.yml).
+  Accepted presets are credited.
+- **Pick a starter task** — see issues labeled
+  [`good first issue`](https://github.com/nvmmonsalud/nonaka-spiral-lab/labels/good%20first%20issue).
+- **Improve the research** — corrections and new case studies for the paper and
+  corpus in `research/` and `results/`.
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup and conventions, and join
+[Discussions](https://github.com/nvmmonsalud/nonaka-spiral-lab/discussions) for
+questions and preset ideas.
+
 ## Repo structure
 
 ```
@@ -70,6 +99,11 @@ npm run dev
 └── artifacts/              # standalone HTML presentation
 ```
 
+## Citation
+
+If you use this work in research, please cite it — see [CITATION.cff](CITATION.cff)
+(GitHub's "Cite this repository" button uses it).
+
 ## License
 
-MIT
+[MIT](LICENSE)

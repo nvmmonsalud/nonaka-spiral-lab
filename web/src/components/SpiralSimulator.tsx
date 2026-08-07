@@ -49,15 +49,17 @@ let nextId = 1;
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
+const DEFAULT_PARAMS: SimParams = {
+  humans: 6, agents: 3, baRedundancy: 0.7, baChaos: 0.6, baAutonomy: 0.6,
+  feedbackRate: 0.85, machineTransfer: 0.7, hallucinationRisk: 0.2,
+};
+
 export default function SpiralSimulator() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
-  const paramsRef = useRef<SimParams>({
-    humans: 6, agents: 3, baRedundancy: 0.7, baChaos: 0.6, baAutonomy: 0.6,
-    feedbackRate: 0.85, machineTransfer: 0.7, hallucinationRisk: 0.2,
-  });
+  const paramsRef = useRef<SimParams>(DEFAULT_PARAMS);
   const rafRef = useRef<number | null>(null);
-  const [params, setParams] = useState<SimParams>(paramsRef.current);
+  const [params, setParams] = useState<SimParams>(DEFAULT_PARAMS);
   const [running, setRunning] = useState(true);
   const [activePreset, setActivePreset] = useState<string>("notco");
   const [levelCounts, setLevelCounts] = useState({ l1: 0, l2: 0, l3: 0, l4: 0 });
@@ -66,7 +68,6 @@ export default function SpiralSimulator() {
   const [events, setEvents] = useState<EventLog[]>([
     { id: 0, t: "00:00", msg: "Spiral initialized. Add knowledge, tune ba, watch the loop.", kind: "info" },
   ]);
-  const [eventCount, setEventCount] = useState(1);
   const [failureCount, setFailureCount] = useState(0);
   const eventCountRef = useRef(1);
   const cycleRef = useRef(0);
@@ -225,7 +226,6 @@ export default function SpiralSimulator() {
     const tick = (now: number) => {
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
-      const p = paramsRef.current;
       const parts = particlesRef.current;
       convertCooldown -= dt;
 

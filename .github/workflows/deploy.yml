@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: vercel-deploy
   cancel-in-progress: true
@@ -32,7 +35,7 @@ jobs:
       - name: Lint + typecheck
         run: |
           npm run lint
-          npx tsc --noEmit
+          npm run typecheck
 
       - name: Build (fail fast on compile errors)
         run: npm run build
