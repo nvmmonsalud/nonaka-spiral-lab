@@ -50,8 +50,10 @@ an individual is officially representing the community in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement by opening an
-issue. All complaints will be reviewed and investigated promptly and fairly.
+reported privately to the maintainer ([@nvmmonsalud](https://github.com/nvmmonsalud))
+via GitHub — for example through [private vulnerability reporting](https://github.com/nvmmonsalud/nonaka-spiral-lab/security/advisories/new)
+if the report is sensitive, or a direct message. All complaints will be
+reviewed and investigated promptly and fairly.
 
 ## Attribution
 

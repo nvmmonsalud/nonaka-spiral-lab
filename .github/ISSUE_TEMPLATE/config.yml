@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 Questions & Discussions
+    url: https://github.com/nvmmonsalud/nonaka-spiral-lab/discussions
+    about: Ask questions, share preset ideas, and discuss the SECI × AI framework.
+  - name: 🔒 Report a security vulnerability
+    url: https://github.com/nvmmonsalud/nonaka-spiral-lab/security/policy
+    about: Please report security issues privately via GitHub security advisories, not public issues.

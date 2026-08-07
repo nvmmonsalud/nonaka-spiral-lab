@@ -208,7 +208,7 @@ Add a `CITATION.cff` file and "How to cite this work" section in README:
 ## 6. Claude for OSS Readiness Checklist
 
 ### When to apply
-Target: **3-6 months from now** (February–May 2027)
+Target: **3–6 months after the open-source launch**
 
 ### Entry criteria met when:
 - [ ] **10+ GitHub stars** (organic, not from friends)
@@ -235,17 +235,26 @@ Target: **3-6 months from now** (February–May 2027)
 
 | Area | Status | Target | Notes |
 |------|--------|--------|-------|
-|| GROWTH-PLAN.md | ✅ Done | This file | Comprehensive growth strategy |
-|| CONTRIBUTING.md | ✅ Done | This file | First-time contributor guide |
-|| CODE_OF_CONDUCT.md | ✅ Done | Month 1 | Contributor Covenant — committed |
-|| SECURITY.md | ⬜ Pending | Month 1 | Security disclosure process |
-|| Issue templates | ✅ Done | Month 1 | Bug + feature + preset templates — committed |
-|| GH Project Board | ⬜ Pending | Month 1 | Public roadmap |
-|| HN Show HN post | ⬜ Pending | Month 2 | Title drafted above |
-|| Blog post | ⬜ Pending | Month 2 | "Building the Knowledge Spiral" |
-|| Demo video | ⬜ Pending | Month 2 | 30-60s screen recording |
-|| Academic citation | ✅ Done | Month 1 | CITATION.cff — committed |
-|| Topic tags added | ⬜ Pending | Month 1 | Add via GitHub repo settings |
+| GROWTH-PLAN.md | ✅ Done | This file | Comprehensive growth strategy |
+| LICENSE (MIT) | ✅ Done | Month 1 | Committed 2026-08 |
+| CONTRIBUTING.md | ✅ Done | Month 1 | First-time contributor guide — committed 2026-08 |
+| CODE_OF_CONDUCT.md | ✅ Done | Month 1 | Contributor Covenant — committed |
+| SECURITY.md | ✅ Done | Month 1 | Private vulnerability reporting — committed 2026-08 |
+| Issue templates | ✅ Done | Month 1 | Bug + feature + preset templates — committed |
+| Issue chooser config | ✅ Done | Month 1 | Links Discussions + security policy — committed 2026-08 |
+| PR template | ✅ Done | Month 1 | Committed 2026-08 |
+| PR CI (lint/typecheck/build) | ✅ Done | Month 1 | `.github/workflows/ci.yml` — committed 2026-08 |
+| Dependabot | ✅ Done | Month 1 | npm + GitHub Actions, weekly grouped — committed 2026-08 |
+| DEPLOYMENT.md | ✅ Done | Month 1 | Vercel button, fork deploy, static export — committed 2026-08 |
+| Good-first-issue backlog | ⬜ Pending | Month 1 | Seed from short-term roadmap after launch |
+| GitHub Discussions enabled | ⬜ Pending | Month 1 | Repo settings |
+| GH Project Board | ⬜ Pending | Month 1 | Public roadmap |
+| HN Show HN post | ⬜ Pending | Month 2 | Title drafted above |
+| Blog post | ⬜ Pending | Month 2 | "Building the Knowledge Spiral" |
+| Demo video | ⬜ Pending | Month 2 | 30-60s screen recording |
+| Academic citation | ✅ Done | Month 1 | CITATION.cff — committed |
+| Topic tags added | ⬜ Pending | Month 1 | Add via GitHub repo settings |
+| CHANGELOG.md + tagged releases | ⬜ Pending | First release | Start at v1.0 tag, not before |
 
 ---
 

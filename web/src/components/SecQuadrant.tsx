@@ -34,7 +34,7 @@ export function SecQuadrant() {
         <text x="660" y="100" fontFamily="Georgia,serif" fontSize="26" fill="#D97757" textAnchor="middle" fontWeight="500">EXTERNALIZATION</text>
         <text x="660" y="128" fontFamily="ui-monospace,Menlo,monospace" fontSize="12" fill="#87867F" textAnchor="middle">tacit → explicit</text>
         <text x="660" y="158" fontFamily="system-ui,sans-serif" fontSize="14" fill="#3D3D3A" textAnchor="middle">Metaphor · dialogue · models</text>
-        <text x="660" y="180" fontFamily="system-ui,sans-serif" fontSize="14" fill="#3D3D3A" textAnchor="middle">"twist and stretch"</text>
+        <text x="660" y="180" fontFamily="system-ui,sans-serif" fontSize="14" fill="#3D3D3A" textAnchor="middle">&ldquo;twist and stretch&rdquo;</text>
         <text x="660" y="212" fontFamily="ui-monospace,Menlo,monospace" fontSize="11" fill="#D97757" textAnchor="middle">AI: expert-interview LLMs</text>
 
         {/* Combination */}
