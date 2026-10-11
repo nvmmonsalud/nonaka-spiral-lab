@@ -18,11 +18,12 @@ cd web
 npm install
 npm run dev        # dev server → http://localhost:3000
 npm run lint       # eslint
-npx tsc --noEmit   # typecheck (CI runs this; not in package.json scripts)
+npm run typecheck  # tsc --noEmit (CI runs this)
+npm test           # vitest run — engine + presets (CI runs this)
 npm run build      # production build — CI fails fast on compile errors
 ```
 
-There is no test suite. CI (`.github/workflows/deploy.yml`) runs lint + `tsc --noEmit` + build on every push to `main`, then deploys to Vercel production — so a broken build on `main` blocks deploys. Run all three locally before pushing.
+Tests live in `web/tests/` (Vitest, node environment, no DOM). CI (`.github/workflows/ci.yml`) runs lint + typecheck + test + build on PRs and pushes to `main`; `.github/workflows/deploy.yml` then deploys to Vercel production on every push to `main`, so a broken build on `main` blocks deploys. Run all four locally before pushing.
 
 ## Next.js version warning
 
@@ -31,7 +32,8 @@ This uses **Next.js 16** (App Router, Turbopack), which has breaking changes vs.
 ## Architecture
 
 - `web/src/app/` — three routes: `/` (landing), `/simulator`, `/research`. Styling is plain CSS: global design-system tokens and shared classes in `globals.css` (ivory/clay/olive/rust palette as CSS custom properties — reuse these tokens, don't hardcode colors), plus `page.module.css`.
-- `web/src/components/SpiralSimulator.tsx` — the core of the app. A single large `"use client"` component running a `requestAnimationFrame` canvas loop. Key mechanics:
+- `web/src/lib/spiral-engine.ts` — pure SECI model: conversion rules (`convertParticle`), per-particle cooldown (`stepParticle`), quadrant geometry (`QUADRANTS`), level stats. No React, no canvas, RNG injectable. Change simulation rules here, with a test in `web/tests/spiral-engine.test.ts`.
+- `web/src/components/SpiralSimulator.tsx` — the canvas/React shell around the engine. A single large `"use client"` component running a `requestAnimationFrame` canvas loop that handles drawing and movement and applies the engine's outcomes. Quadrants sit clockwise S → E → C → I (columns = knowledge converted *to*, rows = converted *from*). Key mechanics:
   - Particles are knowledge units: `kind: "human" | "agent"`, a SECI quadrant (`S/E/C/I`), an ontological `level` 1–4 (individual → group → org → inter-org), and a `corrupted` flag (hallucination = false externalization).
   - Particles advance S → E → C → I → S; a full cycle escalates their level. Agents can also skip articulation via "machine transfer".
   - Simulation parameters (`SimParams`) mirror the ba levers (redundancy, chaos, autonomy) plus feedback rate, machine transfer, and hallucination risk. Live values are kept in refs (`paramsRef` etc.) so the RAF loop reads them without re-rendering; React state mirrors them for the UI. Preserve this ref/state split when modifying the loop.
