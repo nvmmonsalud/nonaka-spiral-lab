@@ -3,7 +3,10 @@ import {
   COOLDOWN_MIN,
   convertChance,
   convertParticle,
+  countLevels,
   createParticle,
+  levelCountsEqual,
+  meanLevel,
   stepParticle,
   type Particle,
   type Quad,
@@ -189,5 +192,23 @@ describe("stepParticle", () => {
       return conversions;
     };
     expect(run(8)).toBeGreaterThan(run(1) * 4);
+  });
+});
+
+describe("level stats", () => {
+  const at = (...levels: number[]) => levels.map((l) => make("human", "S", l));
+
+  it("counts particles per level, folding anything above 3 into l4", () => {
+    expect(countLevels(at(1, 1, 2, 3, 4, 4))).toEqual({ l1: 2, l2: 1, l3: 1, l4: 2 });
+  });
+
+  it("compares counts structurally", () => {
+    expect(levelCountsEqual({ l1: 1, l2: 2, l3: 3, l4: 4 }, { l1: 1, l2: 2, l3: 3, l4: 4 })).toBe(true);
+    expect(levelCountsEqual({ l1: 1, l2: 2, l3: 3, l4: 4 }, { l1: 1, l2: 2, l3: 4, l4: 3 })).toBe(false);
+  });
+
+  it("averages levels, defaulting to 1 when there are no particles", () => {
+    expect(meanLevel([])).toBe(1);
+    expect(meanLevel(at(1, 3))).toBe(2);
   });
 });

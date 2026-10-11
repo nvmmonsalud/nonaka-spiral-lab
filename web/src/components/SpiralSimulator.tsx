@@ -3,10 +3,15 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import presetsData from "../../data/presets.json";
 import {
+  MAX_LEVEL,
   clamp,
+  countLevels,
   createParticle,
+  levelCountsEqual,
+  meanLevel,
   stepParticle,
   type ConvertOutcome,
+  type LevelCounts,
   type Particle,
   type SimParams,
 } from "@/lib/spiral-engine";
@@ -50,6 +55,7 @@ export default function SpiralSimulator() {
   ]);
   const [failureCount, setFailureCount] = useState(0);
   const eventCountRef = useRef(1);
+  const lastCountsRef = useRef<LevelCounts>({ l1: 0, l2: 0, l3: 0, l4: 0 });
   const cycleRef = useRef(0);
   const scoreRef = useRef(0);
   const failureRef = useRef(0);
@@ -171,13 +177,13 @@ export default function SpiralSimulator() {
       const railY = h - 8;
       ctx.fillStyle = "#D1CFC5";
       ctx.fillRect(10, railY, w - 20, 4);
-      const filled = clamp((scoreRef.current % 100) / 100, 0, 1);
+      const filled = clamp((meanLevel(parts) - 1) / (MAX_LEVEL - 1), 0, 1);
       ctx.fillStyle = "#788C5D";
       ctx.fillRect(10, railY, (w - 20) * filled, 4);
       ctx.fillStyle = "#87867F";
       ctx.font = "10px ui-monospace, Menlo, monospace";
       ctx.textAlign = "left";
-      ctx.fillText("ONTOLOGICAL LEVEL", 10, railY - 6);
+      ctx.fillText("MEAN ONTOLOGICAL LEVEL", 10, railY - 6);
 
       // Particles
       parts.forEach((pt) => {
@@ -221,15 +227,12 @@ export default function SpiralSimulator() {
         }
       });
 
-      // Level counts → React state (throttled-ish: every frame is fine, small object)
-      const counts = { l1: 0, l2: 0, l3: 0, l4: 0 };
-      parts.forEach((pt) => {
-        if (pt.level === 1) counts.l1++;
-        else if (pt.level === 2) counts.l2++;
-        else if (pt.level === 3) counts.l3++;
-        else counts.l4++;
-      });
-      setLevelCounts(counts);
+      // Only touch React state when the level histogram actually changed
+      const counts = countLevels(parts);
+      if (!levelCountsEqual(counts, lastCountsRef.current)) {
+        lastCountsRef.current = counts;
+        setLevelCounts(counts);
+      }
 
       rafRef.current = requestAnimationFrame(tick);
     };

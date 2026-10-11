@@ -166,3 +166,31 @@ export function stepParticle(
   if (out.result !== "regress") pt.cooldown = COOLDOWN_MIN + rng() * COOLDOWN_JITTER;
   return out;
 }
+
+export interface LevelCounts {
+  l1: number;
+  l2: number;
+  l3: number;
+  l4: number;
+}
+
+export function countLevels(parts: Particle[]): LevelCounts {
+  const counts: LevelCounts = { l1: 0, l2: 0, l3: 0, l4: 0 };
+  for (const pt of parts) {
+    if (pt.level === 1) counts.l1++;
+    else if (pt.level === 2) counts.l2++;
+    else if (pt.level === 3) counts.l3++;
+    else counts.l4++;
+  }
+  return counts;
+}
+
+export function levelCountsEqual(a: LevelCounts, b: LevelCounts): boolean {
+  return a.l1 === b.l1 && a.l2 === b.l2 && a.l3 === b.l3 && a.l4 === b.l4;
+}
+
+/** Mean ontological level, 1 when there are no particles. */
+export function meanLevel(parts: Particle[]): number {
+  if (parts.length === 0) return 1;
+  return parts.reduce((sum, pt) => sum + pt.level, 0) / parts.length;
+}
