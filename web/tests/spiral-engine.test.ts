@@ -27,10 +27,13 @@ const P: SimParams = {
   hallucinationRisk: 0.2,
 };
 
-/** Returns the given values in order, wrapping around. */
+/** Returns the given values in order; throws once the script is exhausted. */
 const scripted = (...vals: number[]) => {
   let i = 0;
-  return () => vals[i++ % vals.length];
+  return () => {
+    if (i >= vals.length) throw new Error("scripted rng exhausted");
+    return vals[i++];
+  };
 };
 
 function mulberry32(seed: number) {
@@ -45,7 +48,7 @@ function mulberry32(seed: number) {
 }
 
 const make = (kind: Particle["kind"], quad: Quad, level = 1): Particle => ({
-  ...createParticle(1, kind, scripted(0.5)),
+  ...createParticle(1, kind, () => 0.5),
   quad,
   level,
   cooldown: 0,
@@ -94,7 +97,7 @@ describe("convertParticle", () => {
 
   it("corrupts an agent's externalization when hallucination fires", () => {
     const pt = make("agent", "E");
-    const out = convertParticle(pt, { ...P, hallucinationRisk: 1 }, scripted(0));
+    const out = convertParticle(pt, { ...P, hallucinationRisk: 1 }, scripted(0, 0));
     expect(out.result).toBe("stall");
     expect(pt.corrupted).toBe(true);
     expect(pt.quad).toBe("E");
@@ -109,7 +112,7 @@ describe("convertParticle", () => {
 
   it("fails combination without shared context (green milk)", () => {
     const pt = make("human", "C");
-    const out = convertParticle(pt, { ...P, baRedundancy: 0.1 }, scripted(0));
+    const out = convertParticle(pt, { ...P, baRedundancy: 0.1 }, scripted(0, 0));
     expect(out.result).toBe("stall");
     expect(pt.corrupted).toBe(true);
     expect(out.events[0].msg).toMatch(/green milk/);
@@ -117,7 +120,7 @@ describe("convertParticle", () => {
 
   it("lets agents transfer knowledge without changing quadrant", () => {
     const pt = make("agent", "S");
-    const out = convertParticle(pt, { ...P, machineTransfer: 0.9 }, scripted(0));
+    const out = convertParticle(pt, { ...P, machineTransfer: 0.9 }, scripted(0, 0));
     expect(out.result).toBe("transfer");
     expect(pt.quad).toBe("S");
     expect(pt.level).toBe(2);
@@ -128,7 +131,7 @@ describe("convertParticle", () => {
   it("repairs corrupted knowledge through the feedback loop", () => {
     const pt = make("human", "E");
     pt.corrupted = true;
-    const out = convertParticle(pt, { ...P, feedbackRate: 1 }, scripted(0));
+    const out = convertParticle(pt, { ...P, feedbackRate: 1 }, scripted(0, 0));
     expect(pt.corrupted).toBe(false);
     expect(pt.quad).toBe("C");
     expect(out.events[0].kind).toBe("ok");
@@ -137,7 +140,7 @@ describe("convertParticle", () => {
   it("keeps knowledge corrupted when there is no feedback loop", () => {
     const pt = make("human", "E");
     pt.corrupted = true;
-    convertParticle(pt, { ...P, feedbackRate: 0 }, scripted(0));
+    convertParticle(pt, { ...P, feedbackRate: 0 }, scripted(0, 0));
     expect(pt.corrupted).toBe(true);
     expect(pt.quad).toBe("C");
   });
@@ -171,7 +174,7 @@ describe("stepParticle", () => {
 
   it("converts and re-arms its cooldown", () => {
     const pt = make("human", "S");
-    const out = stepParticle(pt, 0.016, true, P, scripted(0));
+    const out = stepParticle(pt, 0.016, true, P, scripted(0, 0));
     expect(out?.result).toBe("ok");
     expect(pt.cooldown).toBeGreaterThanOrEqual(COOLDOWN_MIN);
   });
@@ -187,11 +190,11 @@ describe("stepParticle", () => {
     const run = (n: number) => {
       const rng = mulberry32(42);
       const parts = Array.from({ length: n }, (_, i) => createParticle(i, "human", rng));
-      let conversions = 0;
+      let attempts = 0;
       for (let t = 0; t < 20; t += 1 / 60) {
-        for (const pt of parts) if (stepParticle(pt, 1 / 60, true, P, rng)) conversions++;
+        for (const pt of parts) if (stepParticle(pt, 1 / 60, true, P, rng)) attempts++;
       }
-      return conversions;
+      return attempts;
     };
     expect(run(8)).toBeGreaterThan(run(1) * 4);
   });
