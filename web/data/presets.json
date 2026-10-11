@@ -42,7 +42,7 @@
       "name": "Siloed Org",
       "tagline": "The stalled spiral",
       "icon": "🏢",
-      "description": "Knowledge trapped in individuals and teams. Low redundancy, low chaos, no feedback loop. The spiral stalls at socialization.",
+      "description": "Knowledge trapped in individuals and teams. Low redundancy, low chaos, no feedback loop. The spiral crawls: most conversion attempts fail, and combined knowledge loses its shared context.",
       "initial": {
         "humans": 5,
         "agents": 0,
