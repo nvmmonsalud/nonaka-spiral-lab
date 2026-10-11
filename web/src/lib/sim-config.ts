@@ -119,3 +119,78 @@ export function findMatchingPresetId(
   const hit = presets.find((p) => PARAM_KEYS.every((k) => p.initial[k] === params[k]));
   return hit ? hit.id : "";
 }
+
+// ---------------------------------------------------------------------------
+// Export / import file: { "schema", "version", "initial": { ...the eight levers } }
+// `initial` is byte-for-byte the block a presets.json entry carries.
+// ---------------------------------------------------------------------------
+
+export const CONFIG_SCHEMA = "nonaka-spiral-lab/config";
+export const CONFIG_VERSION = 1;
+/** A real file is ~330 characters; anything past this is not one of ours. */
+export const MAX_JSON_LENGTH = 4096;
+
+const hasOwn = (obj: object, key: string) => Object.prototype.hasOwnProperty.call(obj, key);
+
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
+
+/** Quotes a user-supplied key for an error message, truncated so a hostile key cannot flood the UI. */
+const quote = (key: string) => JSON.stringify(key.length > 32 ? `${key.slice(0, 32)}...` : key);
+
+/**
+ * Strict check of an untrusted object: exactly the eight levers, no more and no
+ * fewer, each a finite number inside its PARAM_SPECS bounds. The result is a
+ * fresh plain object built only from PARAM_KEYS, so nothing the input carries
+ * (for example an own "__proto__" key from JSON.parse) can reach it.
+ */
+export function validateParams(input: unknown): Result<SimParams> {
+  if (!isRecord(input)) return fail("Parameters must be an object.");
+  for (const key of Object.keys(input)) {
+    if (!hasOwn(PARAM_SPECS, key)) return fail(`Unknown parameter ${quote(key)}.`);
+  }
+  const out: Partial<SimParams> = {};
+  for (const k of PARAM_KEYS) {
+    if (!hasOwn(input, k)) return fail(`Missing parameter ${quote(k)}.`);
+    const checked = checkValue(k, input[k]);
+    if (!checked.ok) return checked;
+    out[k] = checked.value;
+  }
+  return ok(out as SimParams);
+}
+
+/** Pretty-printed config file text, ending in a newline. Only the eight levers are written. */
+export function exportConfig(params: SimParams): string {
+  const initial: Partial<SimParams> = {};
+  for (const k of PARAM_KEYS) initial[k] = params[k];
+  return `${JSON.stringify({ schema: CONFIG_SCHEMA, version: CONFIG_VERSION, initial }, null, 2)}\n`;
+}
+
+/**
+ * Strictly parses config file text. Rejects (never clamps) anything that is not
+ * exactly what `exportConfig` writes: bad JSON, wrong schema or version,
+ * unknown or missing fields, wrong types, non-finite or out-of-range numbers,
+ * fractional head-counts, and oversized text. Never throws.
+ */
+export function importConfig(text: string): Result<SimParams> {
+  if (text.length > MAX_JSON_LENGTH) {
+    return fail(`The file is too large (limit ${MAX_JSON_LENGTH} characters).`);
+  }
+  // Windows editors save "UTF-8 with BOM"; JSON.parse rejects the leading U+FEFF.
+  const body = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+  let doc: unknown;
+  try {
+    doc = JSON.parse(body);
+  } catch {
+    return fail("The file is not valid JSON.");
+  }
+  if (!isRecord(doc)) return fail("The file must contain a JSON object.");
+  if (doc.schema !== CONFIG_SCHEMA) return fail("This is not a Spiral Lab configuration file.");
+  if (doc.version !== CONFIG_VERSION) {
+    return fail(`Unsupported configuration version (this app reads version ${CONFIG_VERSION}).`);
+  }
+  for (const key of Object.keys(doc)) {
+    if (key !== "schema" && key !== "version" && key !== "initial") return fail(`Unknown field ${quote(key)}.`);
+  }
+  return validateParams(doc.initial);
+}
