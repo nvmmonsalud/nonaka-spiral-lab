@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import presetsData from "../../data/presets.json";
+import ConfigControls, { type ConfigNotice } from "@/components/ConfigControls";
+import { DEFAULT_PARAMS, PARAM_SPECS, findMatchingPresetId, parseParams } from "@/lib/sim-config";
 import {
   MAX_LEVEL,
   QUADRANTS,
@@ -36,11 +38,6 @@ interface EventLog {
 
 let nextId = 1;
 
-const DEFAULT_PARAMS: SimParams = {
-  humans: 6, agents: 3, baRedundancy: 0.7, baChaos: 0.6, baAutonomy: 0.6,
-  feedbackRate: 0.85, machineTransfer: 0.7, hallucinationRisk: 0.2,
-};
-
 export default function SpiralSimulator() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
@@ -61,6 +58,8 @@ export default function SpiralSimulator() {
   const cycleRef = useRef(0);
   const scoreRef = useRef(0);
   const failureRef = useRef(0);
+  const urlLoadedRef = useRef(false);
+  const [notice, setNotice] = useState<ConfigNotice | null>(null);
 
   const pushEvent = useCallback((msg: string, kind: EventLog["kind"]) => {
     const now = new Date();
@@ -100,14 +99,27 @@ export default function SpiralSimulator() {
     rebuildParticles();
   }, [rebuildParticles]);
 
-  const applyPreset = useCallback((preset: Preset) => {
-    const next: SimParams = { ...preset.initial };
+  // The one path every whole-configuration change takes: preset buttons, a shared
+  // link, an imported file. Ref first (the RAF loop reads it), then the UI mirror.
+  const applyConfig = useCallback((next: SimParams, message: string, presetId?: string) => {
     paramsRef.current = next;
     setParams(next);
-    setActivePreset(preset.id);
+    setActivePreset(presetId ?? findMatchingPresetId(next, presetsData.presets));
+    setNotice(null);
     rebuildParticles();
-    pushEvent(`Preset loaded: ${preset.name} — ${preset.tagline}`, "info");
+    pushEvent(message, "info");
   }, [rebuildParticles, pushEvent]);
+
+  const applyPreset = useCallback((preset: Preset) => {
+    applyConfig({ ...preset.initial }, `Preset loaded: ${preset.name} — ${preset.tagline}`, preset.id);
+  }, [applyConfig]);
+
+  // Visible feedback for copy/export/import and rejected links. Errors also go to the
+  // event log as "warn", not "bad", so they do not count as simulation failures.
+  const showNotice = useCallback((kind: ConfigNotice["kind"], text: string) => {
+    setNotice({ kind, text });
+    pushEvent(text, kind === "error" ? "warn" : "info");
+  }, [pushEvent]);
 
   // Apply what the engine reported to the UI mirrors (refs first, then state)
   const applyOutcome = useCallback((outcome: ConvertOutcome) => {
@@ -254,6 +266,32 @@ export default function SpiralSimulator() {
     rebuildParticles();
   }, [rebuildParticles]);
 
+  // Load a shared configuration from the URL once, after hydration. Reading
+  // window.location here (not useSearchParams) keeps /simulator statically
+  // prerendered with the full UI in the HTML; the default preset is what the
+  // server renders and this swaps the shared values in.
+  const loadSharedLink = useCallback(() => {
+    const parsed = parseParams(window.location.search, DEFAULT_PARAMS);
+    if (!parsed.ok) {
+      showNotice("error", `Ignored the shared link: ${parsed.error}`);
+    } else if (parsed.value) {
+      applyConfig(parsed.value, "Loaded the configuration from the shared link.");
+    }
+  }, [applyConfig, showNotice]);
+
+  useEffect(() => {
+    if (urlLoadedRef.current) return; // StrictMode runs mount effects twice in dev
+    urlLoadedRef.current = true;
+    loadSharedLink();
+  }, [loadSharedLink]);
+
+  // "Link copied" style notices fade after a few seconds; errors stay until the next action.
+  useEffect(() => {
+    if (notice?.kind !== "ok") return;
+    const timer = setTimeout(() => setNotice(null), 4000);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
   const toggleRun = () => setRunning((r) => !r);
   const resetSpiral = () => {
     particlesRef.current = [];
@@ -314,12 +352,12 @@ export default function SpiralSimulator() {
 
         <div className="control-row">
           <label>Humans <span className="val">{params.humans}</span></label>
-          <input type="range" min={0} max={12} value={params.humans}
+          <input type="range" min={PARAM_SPECS.humans.min} max={PARAM_SPECS.humans.max} value={params.humans}
             onChange={(e) => updateParam("humans", Number(e.target.value))} />
         </div>
         <div className="control-row">
           <label>AI Agents <span className="val">{params.agents}</span></label>
-          <input type="range" min={0} max={12} value={params.agents}
+          <input type="range" min={PARAM_SPECS.agents.min} max={PARAM_SPECS.agents.max} value={params.agents}
             onChange={(e) => updateParam("agents", Number(e.target.value))} />
         </div>
         <div className="control-row">
@@ -359,6 +397,13 @@ export default function SpiralSimulator() {
           </button>
           <button className="btn ghost" onClick={resetSpiral}>↺ Reset</button>
         </div>
+
+        <ConfigControls
+          getParams={() => paramsRef.current}
+          onApply={applyConfig}
+          onNotice={showNotice}
+          notice={notice}
+        />
 
         <div className="card" style={{ marginTop: 8 }}>
           <p className="mono-label">Event log</p>
