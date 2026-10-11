@@ -1,18 +1,7 @@
 import { describe, expect, it } from "vitest";
 import presetsData from "../data/presets.json";
+import { PARAM_KEYS, PARAM_SPECS } from "../src/lib/sim-config";
 import { convertChance } from "../src/lib/spiral-engine";
-
-const PARAM_KEYS = [
-  "humans",
-  "agents",
-  "baRedundancy",
-  "baChaos",
-  "baAutonomy",
-  "feedbackRate",
-  "machineTransfer",
-  "hallucinationRisk",
-] as const;
-const UNIT_KEYS = PARAM_KEYS.filter((k) => k !== "humans" && k !== "agents");
 
 describe("presets.json", () => {
   it("has unique ids", () => {
@@ -26,18 +15,13 @@ describe("presets.json", () => {
         expect(Object.keys(preset.initial).sort()).toEqual([...PARAM_KEYS].sort());
       });
 
-      it("keeps head-counts integral and inside the slider range 0–12", () => {
-        for (const k of ["humans", "agents"] as const) {
-          expect(Number.isInteger(preset.initial[k])).toBe(true);
-          expect(preset.initial[k]).toBeGreaterThanOrEqual(0);
-          expect(preset.initial[k]).toBeLessThanOrEqual(12);
-        }
-      });
-
-      it("keeps ba, feedback, transfer and hallucination levers inside 0–1", () => {
-        for (const k of UNIT_KEYS) {
-          expect(preset.initial[k]).toBeGreaterThanOrEqual(0);
-          expect(preset.initial[k]).toBeLessThanOrEqual(1);
+      it("keeps every lever inside its PARAM_SPECS bounds, with whole-number head-counts", () => {
+        for (const k of PARAM_KEYS) {
+          const { min, max, integer } = PARAM_SPECS[k];
+          const v = preset.initial[k];
+          expect(v, `${preset.id}.${k}`).toBeGreaterThanOrEqual(min);
+          expect(v, `${preset.id}.${k}`).toBeLessThanOrEqual(max);
+          if (integer) expect(Number.isInteger(v), `${preset.id}.${k} must be whole`).toBe(true);
         }
       });
 

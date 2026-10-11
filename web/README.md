@@ -10,13 +10,17 @@ npm install       # Node.js 22+
 npm run dev       # → http://localhost:3000
 npm run lint      # eslint
 npm run typecheck # tsc --noEmit
-npm run build     # production build (CI runs all three checks)
+npm test          # vitest run
+npm run build     # production build (CI runs all four checks)
 ```
 
 ## Where things live
 
 - `src/app/` — routes: `/` (landing), `/simulator`, `/research`; design tokens in `globals.css`
 - `src/components/SpiralSimulator.tsx` — the core canvas simulation
+- `src/components/ConfigControls.tsx` — Copy link / Export JSON / Import JSON buttons and their status line
+- `src/lib/spiral-engine.ts` — the pure SECI model (no React, no canvas)
+- `src/lib/sim-config.ts` — share-link and JSON-file codec; the single source of truth for lever bounds
 - `src/components/SecQuadrant.tsx` — the SVG SECI quadrant diagram
 - `data/presets.json` — simulator presets (see [CONTRIBUTING.md](../CONTRIBUTING.md) to add one)
 
