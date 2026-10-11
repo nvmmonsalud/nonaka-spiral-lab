@@ -2,19 +2,16 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import presetsData from "../../data/presets.json";
+import {
+  clamp,
+  convertParticle,
+  createParticle,
+  type ConvertOutcome,
+  type Particle,
+  type SimParams,
+} from "@/lib/spiral-engine";
 
 type Preset = (typeof presetsData.presets)[number];
-
-interface SimParams {
-  humans: number;
-  agents: number;
-  baRedundancy: number;
-  baChaos: number;
-  baAutonomy: number;
-  feedbackRate: number;
-  machineTransfer: number;
-  hallucinationRisk: number;
-}
 
 const QUADRANTS = [
   { key: "S", name: "SOCIALIZATION", color: "#E3DACC", x: 0, y: 0, ax: 0.25, ay: 0.25 },
@@ -22,21 +19,6 @@ const QUADRANTS = [
   { key: "C", name: "COMBINATION", color: "#DCE3D0", x: 0, y: 1, ax: 0.25, ay: 0.75 },
   { key: "I", name: "INTERNALIZATION", color: "#F0EEE6", x: 1, y: 1, ax: 0.75, ay: 0.75 },
 ];
-
-const NEXT_QUADRANT: Record<string, string> = { S: "E", E: "C", C: "I", I: "S" };
-
-interface Particle {
-  id: number;
-  kind: "human" | "agent";
-  quad: string;
-  level: number; // 1..4 ontological level
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  corrupted: boolean;
-  size: number;
-}
 
 interface EventLog {
   id: number;
@@ -46,8 +28,6 @@ interface EventLog {
 }
 
 let nextId = 1;
-
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 const DEFAULT_PARAMS: SimParams = {
   humans: 6, agents: 3, baRedundancy: 0.7, baChaos: 0.6, baAutonomy: 0.6,
@@ -95,18 +75,10 @@ export default function SpiralSimulator() {
     const agents = existing.filter((pt) => pt.kind === "agent");
     const target = [...humans.slice(0, p.humans), ...agents.slice(0, p.agents)];
     while (target.filter((pt) => pt.kind === "human").length < p.humans) {
-      target.push({
-        id: nextId++, kind: "human", quad: "S", level: 1,
-        x: Math.random(), y: Math.random(), vx: 0, vy: 0, corrupted: false,
-        size: 7 + Math.random() * 3,
-      });
+      target.push(createParticle(nextId++, "human"));
     }
     while (target.filter((pt) => pt.kind === "agent").length < p.agents) {
-      target.push({
-        id: nextId++, kind: "agent", quad: "S", level: 1,
-        x: Math.random(), y: Math.random(), vx: 0, vy: 0, corrupted: false,
-        size: 8 + Math.random() * 3,
-      });
+      target.push(createParticle(nextId++, "agent"));
     }
     particlesRef.current = target;
   }, []);
@@ -129,75 +101,15 @@ export default function SpiralSimulator() {
     pushEvent(`Preset loaded: ${preset.name} — ${preset.tagline}`, "info");
   }, [rebuildParticles, pushEvent]);
 
-  // One full knowledge conversion (SECI step) — called when a particle reaches its target
-  const onConvert = useCallback((pt: Particle) => {
-    const p = paramsRef.current;
-    const roll = Math.random();
-    const convertChance =
-      p.baRedundancy * 0.5 + p.baChaos * 0.2 + p.baAutonomy * 0.3 + p.feedbackRate * 0.3;
-    const success = roll < clamp(convertChance, 0.15, 0.95);
-
-    // Hallucination risk: agent output may be false externalization
-    if (pt.kind === "agent" && pt.quad === "E" && Math.random() < p.hallucinationRisk) {
-      pt.corrupted = true;
-      pushEvent(
-        pt.level >= 3
-          ? `False externalization: an agent at level ${pt.level} produced hallucinated knowledge.`
-          : "An agent hallucinated during externalization.",
-        "bad"
-      );
-      return "stall";
-    }
-
-    // Green-milk style context failure when ba redundancy is very low
-    if (pt.quad === "C" && p.baRedundancy < 0.25 && Math.random() < 0.35) {
-      pt.corrupted = true;
-      pushEvent("Context failure: combined knowledge without shared meaning (green milk).", "bad");
-      return "stall";
-    }
-
-    if (!success) {
-      // Chaotic environments sometimes move knowledge *back* a mode — creative chaos.
-      if (p.baChaos > 0.7 && Math.random() < 0.25) {
-        pt.quad = "S";
-        return "regress";
-      }
-      return "stall";
-    }
-
-    // Machine transfer: at high machineTransfer, agent knowledge skips human articulation
-    if (pt.kind === "agent" && p.machineTransfer > 0.6 && Math.random() < p.machineTransfer * 0.4) {
-      pt.level = clamp(pt.level + 1, 1, 4);
-      cycleRef.current += 1;
+  // Apply what the engine reported to the UI mirrors (refs first, then state)
+  const applyOutcome = useCallback((outcome: ConvertOutcome) => {
+    if (outcome.cycles > 0) {
+      cycleRef.current += outcome.cycles;
       setCycleCount(cycleRef.current);
-      scoreRef.current += pt.level * 10;
+      scoreRef.current += outcome.score;
       setSpiralScore(scoreRef.current);
-      if (pt.level >= 4 && Math.random() < 0.2) {
-        pushEvent("Machine transfer: tacit machine knowledge crossed the organizational boundary.", "ok");
-      }
-      return "transfer";
     }
-
-    // Normal conversion: advance to next quadrant
-    const next = NEXT_QUADRANT[pt.quad];
-    pt.quad = next;
-    if (pt.corrupted && Math.random() < p.feedbackRate) {
-      // Feedback loop repairs corrupted knowledge (the NotCo pattern)
-      pt.corrupted = false;
-      pushEvent("Feedback loop: a human judgment corrected corrupted knowledge.", "ok");
-    }
-    if (next === "S") {
-      // Full cycle complete → escalate ontological level
-      pt.level = clamp(pt.level + 1, 1, 4);
-      cycleRef.current += 1;
-      setCycleCount(cycleRef.current);
-      scoreRef.current += pt.level * 10;
-      setSpiralScore(scoreRef.current);
-      if (pt.level >= 2 && Math.random() < 0.15) {
-        pushEvent(`Knowledge escalated to level ${pt.level} (${pt.kind}).`, "info");
-      }
-    }
-    return "ok";
+    outcome.events.forEach((ev) => pushEvent(ev.msg, ev.kind));
   }, [pushEvent]);
 
   // Animation loop
@@ -280,8 +192,9 @@ export default function SpiralSimulator() {
 
         // Conversion when close to target
         if (convertCooldown <= 0 && Math.hypot(tx - pt.x, ty - pt.y) < 12) {
-          const result = onConvert(pt);
-          if (result !== "regress") {
+          const outcome = convertParticle(pt, paramsRef.current);
+          applyOutcome(outcome);
+          if (outcome.result !== "regress") {
             convertCooldown = 0.9 + Math.random() * 0.5;
           }
         }
@@ -335,7 +248,7 @@ export default function SpiralSimulator() {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", resize);
     };
-  }, [running, onConvert]);
+  }, [running, applyOutcome]);
 
   // Initial rebuild on mount
   useEffect(() => {
