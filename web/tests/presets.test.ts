@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import presetsData from "../data/presets.json";
+import { convertChance } from "../src/lib/spiral-engine";
 
 const PARAM_KEYS = [
   "humans",
@@ -45,4 +46,17 @@ describe("presets.json", () => {
       });
     });
   }
+
+  it("makes the siloed org the slowest preset to convert", () => {
+    const chance = (id: string) => convertChance(presetsData.presets.find((p) => p.id === id)!.initial);
+    const siloed = chance("siloed");
+    for (const p of presetsData.presets) {
+      if (p.id !== "siloed") expect(chance(p.id)).toBeGreaterThan(siloed);
+    }
+  });
+
+  it("does not claim the siloed spiral stalls at one quadrant (the engine has no such rule)", () => {
+    const siloed = presetsData.presets.find((p) => p.id === "siloed")!;
+    expect(siloed.description).not.toMatch(/stalls at socialization/i);
+  });
 });
