@@ -147,3 +147,22 @@ export function convertParticle(pt: Particle, p: SimParams, rng: Rng = Math.rand
   }
   return out;
 }
+
+/**
+ * Advance one particle's conversion clock by `dt`. Converts when the particle has
+ * arrived at its quadrant anchor and its own cooldown has elapsed. A regression
+ * leaves the cooldown alone so the particle can try again immediately.
+ */
+export function stepParticle(
+  pt: Particle,
+  dt: number,
+  arrived: boolean,
+  p: SimParams,
+  rng: Rng = Math.random
+): ConvertOutcome | null {
+  pt.cooldown -= dt;
+  if (!arrived || pt.cooldown > 0) return null;
+  const out = convertParticle(pt, p, rng);
+  if (out.result !== "regress") pt.cooldown = COOLDOWN_MIN + rng() * COOLDOWN_JITTER;
+  return out;
+}

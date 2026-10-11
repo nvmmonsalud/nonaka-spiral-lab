@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  COOLDOWN_MIN,
   convertChance,
   convertParticle,
   createParticle,
+  stepParticle,
   type Particle,
   type Quad,
   type SimParams,
@@ -25,6 +27,17 @@ const scripted = (...vals: number[]) => {
   let i = 0;
   return () => vals[i++ % vals.length];
 };
+
+function mulberry32(seed: number) {
+  let a = seed;
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
 const make = (kind: Particle["kind"], quad: Quad, level = 1): Particle => ({
   ...createParticle(1, kind, scripted(0.5)),
@@ -135,5 +148,46 @@ describe("convertParticle", () => {
     const pt = make("human", "I", 4);
     convertParticle(pt, P, scripted(0, 0.99));
     expect(pt.level).toBe(4);
+  });
+});
+
+describe("stepParticle", () => {
+  it("does nothing until the particle arrives", () => {
+    const pt = make("human", "S");
+    expect(stepParticle(pt, 0.1, false, P, scripted(0))).toBeNull();
+    expect(pt.quad).toBe("S");
+  });
+
+  it("waits out its own cooldown", () => {
+    const pt = { ...make("human", "S"), cooldown: 1 };
+    expect(stepParticle(pt, 0.5, true, P, scripted(0))).toBeNull();
+    expect(pt.cooldown).toBeCloseTo(0.5, 5);
+  });
+
+  it("converts and re-arms its cooldown", () => {
+    const pt = make("human", "S");
+    const out = stepParticle(pt, 0.016, true, P, scripted(0));
+    expect(out?.result).toBe("ok");
+    expect(pt.cooldown).toBeGreaterThanOrEqual(COOLDOWN_MIN);
+  });
+
+  it("leaves the cooldown alone after a regression", () => {
+    const pt = make("human", "E");
+    const out = stepParticle(pt, 0.016, true, { ...P, baChaos: 0.8 }, scripted(0.99, 0));
+    expect(out?.result).toBe("regress");
+    expect(pt.cooldown).toBeLessThanOrEqual(0);
+  });
+
+  it("scales throughput with population (no shared cooldown)", () => {
+    const run = (n: number) => {
+      const rng = mulberry32(42);
+      const parts = Array.from({ length: n }, (_, i) => createParticle(i, "human", rng));
+      let conversions = 0;
+      for (let t = 0; t < 20; t += 1 / 60) {
+        for (const pt of parts) if (stepParticle(pt, 1 / 60, true, P, rng)) conversions++;
+      }
+      return conversions;
+    };
+    expect(run(8)).toBeGreaterThan(run(1) * 4);
   });
 });

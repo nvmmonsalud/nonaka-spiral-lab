@@ -4,8 +4,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import presetsData from "../../data/presets.json";
 import {
   clamp,
-  convertParticle,
   createParticle,
+  stepParticle,
   type ConvertOutcome,
   type Particle,
   type SimParams,
@@ -133,13 +133,11 @@ export default function SpiralSimulator() {
     window.addEventListener("resize", resize);
 
     let last = performance.now();
-    let convertCooldown = 0;
 
     const tick = (now: number) => {
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
       const parts = particlesRef.current;
-      convertCooldown -= dt;
 
       ctx.clearRect(0, 0, w, h);
 
@@ -190,14 +188,10 @@ export default function SpiralSimulator() {
         pt.x += (tx - pt.x) * Math.min(dt * speed, 0.2);
         pt.y += (ty - pt.y) * Math.min(dt * speed, 0.2);
 
-        // Conversion when close to target
-        if (convertCooldown <= 0 && Math.hypot(tx - pt.x, ty - pt.y) < 12) {
-          const outcome = convertParticle(pt, paramsRef.current);
-          applyOutcome(outcome);
-          if (outcome.result !== "regress") {
-            convertCooldown = 0.9 + Math.random() * 0.5;
-          }
-        }
+        // Conversion when close to target; each particle keeps its own cooldown
+        const arrived = Math.hypot(tx - pt.x, ty - pt.y) < 12;
+        const outcome = stepParticle(pt, dt, arrived, paramsRef.current);
+        if (outcome) applyOutcome(outcome);
 
         const radius = pt.size * (pt.level > 2 ? 1.2 : 1);
         ctx.beginPath();
