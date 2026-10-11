@@ -1,4 +1,5 @@
 export type Quad = "S" | "E" | "C" | "I";
+export type Mode = "tacit" | "explicit";
 export type Rng = () => number;
 export type EventKind = "ok" | "warn" | "bad" | "info";
 
@@ -41,11 +42,31 @@ export interface ConvertOutcome {
   score: number;
 }
 
+export interface QuadrantDef {
+  key: Quad;
+  name: string;
+  from: Mode;
+  to: Mode;
+  x: 0 | 1; // grid column: 0 = converts *to* tacit, 1 = converts *to* explicit
+  y: 0 | 1; // grid row: 0 = converts *from* tacit, 1 = converts *from* explicit
+  ax: number; // anchor, fraction of canvas width
+  ay: number; // anchor, fraction of canvas height
+}
+
 export const MAX_LEVEL = 4;
 export const COOLDOWN_MIN = 1.5;
 export const COOLDOWN_JITTER = 1.0;
 
 export const NEXT_QUADRANT: Record<Quad, Quad> = { S: "E", E: "C", C: "I", I: "S" };
+
+// Nonaka's matrix: columns = knowledge converted TO, rows = converted FROM.
+// Reading S → E → C → I walks the grid clockwise.
+export const QUADRANTS: QuadrantDef[] = [
+  { key: "S", name: "SOCIALIZATION", from: "tacit", to: "tacit", x: 0, y: 0, ax: 0.25, ay: 0.25 },
+  { key: "E", name: "EXTERNALIZATION", from: "tacit", to: "explicit", x: 1, y: 0, ax: 0.75, ay: 0.25 },
+  { key: "C", name: "COMBINATION", from: "explicit", to: "explicit", x: 1, y: 1, ax: 0.75, ay: 0.75 },
+  { key: "I", name: "INTERNALIZATION", from: "explicit", to: "tacit", x: 0, y: 1, ax: 0.25, ay: 0.75 },
+];
 
 export const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 

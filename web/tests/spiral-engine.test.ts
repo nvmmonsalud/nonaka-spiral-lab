@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   COOLDOWN_MIN,
+  NEXT_QUADRANT,
+  QUADRANTS,
   convertChance,
   convertParticle,
   countLevels,
@@ -210,5 +212,23 @@ describe("level stats", () => {
   it("averages levels, defaulting to 1 when there are no particles", () => {
     expect(meanLevel([])).toBe(1);
     expect(meanLevel(at(1, 3))).toBe(2);
+  });
+});
+
+describe("QUADRANTS geometry", () => {
+  const byKey = Object.fromEntries(QUADRANTS.map((q) => [q.key, q]));
+
+  it("places each quadrant by Nonaka's matrix (columns = to, rows = from)", () => {
+    for (const q of QUADRANTS) {
+      expect(q.x).toBe(q.to === "explicit" ? 1 : 0);
+      expect(q.y).toBe(q.from === "explicit" ? 1 : 0);
+    }
+  });
+
+  it("moves between adjacent cells on every step, including I → S", () => {
+    for (const q of QUADRANTS) {
+      const n = byKey[NEXT_QUADRANT[q.key]];
+      expect(Math.abs(q.x - n.x) + Math.abs(q.y - n.y)).toBe(1);
+    }
   });
 });

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import presetsData from "../../data/presets.json";
 import {
   MAX_LEVEL,
+  QUADRANTS,
   clamp,
   countLevels,
   createParticle,
@@ -13,17 +14,18 @@ import {
   type ConvertOutcome,
   type LevelCounts,
   type Particle,
+  type Quad,
   type SimParams,
 } from "@/lib/spiral-engine";
 
 type Preset = (typeof presetsData.presets)[number];
 
-const QUADRANTS = [
-  { key: "S", name: "SOCIALIZATION", color: "#E3DACC", x: 0, y: 0, ax: 0.25, ay: 0.25 },
-  { key: "E", name: "EXTERNALIZATION", color: "#F3D9CE", x: 1, y: 0, ax: 0.75, ay: 0.25 },
-  { key: "C", name: "COMBINATION", color: "#DCE3D0", x: 0, y: 1, ax: 0.25, ay: 0.75 },
-  { key: "I", name: "INTERNALIZATION", color: "#F0EEE6", x: 1, y: 1, ax: 0.75, ay: 0.75 },
-];
+const QUADRANT_COLORS: Record<Quad, string> = {
+  S: "#E3DACC",
+  E: "#F3D9CE",
+  C: "#DCE3D0",
+  I: "#F0EEE6",
+};
 
 interface EventLog {
   id: number;
@@ -153,7 +155,7 @@ export default function SpiralSimulator() {
         const y0 = q.y === 0 ? 10 : h / 2 + 5;
         const x1 = q.x === 0 ? w / 2 - 5 : w - 10;
         const y1 = q.y === 0 ? h / 2 - 5 : h - 10;
-        ctx.fillStyle = q.color;
+        ctx.fillStyle = QUADRANT_COLORS[q.key];
         ctx.strokeStyle = "#D1CFC5";
         ctx.lineWidth = 1.5;
         ctx.beginPath();
@@ -170,7 +172,7 @@ export default function SpiralSimulator() {
         ctx.fillText(q.name, qx, qy);
         ctx.fillStyle = "#87867F";
         ctx.font = "10px ui-monospace, Menlo, monospace";
-        ctx.fillText(`${q.key === "S" ? "tacit→tacit" : q.key === "E" ? "tacit→explicit" : q.key === "C" ? "explicit→explicit" : "explicit→tacit"}`, qx, qy + 14);
+        ctx.fillText(`${q.from}→${q.to}`, qx, qy + 14);
       });
 
       // Level rails (ontological escalation indicator)
