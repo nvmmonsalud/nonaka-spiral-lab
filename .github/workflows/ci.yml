@@ -19,11 +19,15 @@ jobs:
       run:
         working-directory: web
     steps:
+      # Pinned to the commit behind the tag: a moved tag is otherwise executable
+      # code. Dependabot keeps these current, and its PRs review as code changes.
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: npm

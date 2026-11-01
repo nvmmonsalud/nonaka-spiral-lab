@@ -8,8 +8,12 @@ surface is limited to:
 
 - Cross-site scripting via rendered content (e.g. preset data)
 - Supply-chain issues in npm dependencies or GitHub Actions
-- The CI/CD pipeline (Vercel deploy secrets are stored as GitHub repository
-  secrets and are never exposed to pull requests from forks)
+- The build and deploy pipeline: pushes to `main` deploy to production through
+  Vercel's Git integration, which authenticates via the Vercel GitHub App. No
+  deploy token is stored in GitHub Actions, and no application secrets exist.
+  Preview deployments for branches are publicly readable, which is acceptable
+  while the repository and all simulated data are public — revisit if private
+  presets or credentials are ever added.
 
 ## Supported versions
 
@@ -27,3 +31,19 @@ GitHub's private vulnerability reporting:
 
 You can expect an initial response within a week. Once a fix ships, the report
 will be credited (unless you prefer to remain anonymous).
+
+## Known accepted risks
+
+- **`minimatch` below 11.0.1 (moderate, build-time only).** Reached through
+  ESLint's config loader (`^3.1.5`) and `@typescript-eslint/typescript-estree`
+  (`^10.2.2`). The patched release is 11.0.1, which sits outside both parents'
+  ranges. Remediation therefore needs compatible releases from each consumer —
+  ESLint 10 (tracked in #17) is one, and `typescript-eslint` is a separate
+  consumer with its own dependency — not a version bump. Forcing `minimatch@11`
+  onto consumers written against v3 is a breakage, not a fix. Reaching the
+  vulnerable path requires attacker-controlled glob patterns during lint, which
+  means changing lint configuration; that is governed by the same review
+  boundary as any other build change, not by dependency classification alone.
+- **Dev dependencies carry advisories; the shipped bundle does not.**
+  `npm audit --omit=dev` reports zero. The application ships only `next`,
+  `react` and `react-dom`; everything else is build and lint tooling.
