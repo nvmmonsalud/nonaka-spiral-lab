@@ -182,6 +182,11 @@ describe("importConfig: rejects, naming what is wrong", () => {
     // guess, and let JSON.parse phrase the error.
     expectError('{"a\\u12":1}', /not valid JSON/);
     expectError('{"a\\u12zz":1}', /not valid JSON/);
+    // Two malformed escapes that a scanner without its hex guard would decode to the
+    // same key, report as a duplicate, and so never reach JSON.parse. This is the case
+    // that actually pins the guard: the single-key documents above are rejected by
+    // JSON.parse either way.
+    expectError('{"a\\u12zz":1,"a\\u12zz":2}', /not valid JSON/);
   });
 
   it("rejects a different schema, or none", () => {

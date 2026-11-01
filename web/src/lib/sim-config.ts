@@ -177,8 +177,11 @@ export function exportConfig(params: SimParams): string {
  * object, at any depth. Escapes are decoded, so `"hum\u0061ns"` collides with
  * `"humans"` exactly as it does after parsing.
  *
- * Returns null when nothing repeats, and also when the text is malformed: JSON.parse
- * owns that error and phrases it better.
+ * Returns null when nothing repeats, and when it reaches text it cannot scan - a
+ * broken escape, an unterminated string - because those errors belong to JSON.parse,
+ * which phrases them better. It does not validate the whole document before
+ * answering, so a duplicate found ahead of later malformed syntax is still reported
+ * as a duplicate. Both inputs are rejected either way; only the message differs.
  */
 function findRepeatedKey(text: string): string | null {
   interface Frame {

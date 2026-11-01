@@ -75,7 +75,7 @@ host can serve.
 
 ```bash
 cd web
-npm install       # Node.js 22+
+npm install       # Node.js 24 (22.13+ also works)
 npm run dev       # → http://localhost:3000
 ```
 
@@ -108,7 +108,8 @@ rebuild:
 
 ## Operational notes
 
-- **Runtime requirements:** Node.js 22+ to build; any static/edge host to serve.
+- **Runtime requirements:** Node.js 24 to build (22.13+ also works; ESLint 10 rejects
+  22.0-22.12); any static/edge host to serve.
 - **No GitHub Actions deployment secrets.** No `VERCEL_TOKEN` and no repository
   secrets are configured or required — deploys authenticate through the Vercel
   GitHub App. The project/org IDs in `web/.vercel/project.json` are non-secret

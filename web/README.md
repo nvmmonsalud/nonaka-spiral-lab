@@ -6,7 +6,7 @@ simulation, no backend, no API keys.
 ## Develop
 
 ```bash
-npm install       # Node.js 22+
+npm install       # Node.js 24 (22.13+ also works)
 npm run dev       # → http://localhost:3000
 npm run lint      # eslint
 npm run typecheck # tsc --noEmit
