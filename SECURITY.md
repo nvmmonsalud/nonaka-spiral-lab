@@ -38,8 +38,9 @@ will be credited (unless you prefer to remain anonymous).
   ESLint's config loader (`^3.1.5`) and `@typescript-eslint/typescript-estree`
   (`^10.2.2`). The patched release is 11.0.1, which sits outside both parents'
   ranges. Remediation therefore needs compatible releases from each consumer —
-  ESLint 10 (tracked in #17) is one, and `typescript-eslint` is a separate
-  consumer with its own dependency — not a version bump. Forcing `minimatch@11`
+  an ESLint major whose bundled plugins also support it is one, and
+  `typescript-eslint` is a separate consumer with its own dependency — not a
+  version bump. Forcing `minimatch@11`
   onto consumers written against v3 is a breakage, not a fix. Reaching the
   vulnerable path requires attacker-controlled glob patterns during lint, which
   means changing lint configuration; that is governed by the same review
