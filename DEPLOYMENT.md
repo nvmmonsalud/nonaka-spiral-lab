@@ -108,7 +108,8 @@ rebuild:
   and enforced against admins too — and force-pushes and deletions are blocked.
   Because Vercel deploys on push to `main`, this protection is what actually
   keeps untested code out of production; Vercel's own Deployment Checks would be
-  a second layer but are not available on the Hobby plan. To land an emergency
+  a second layer, but none are configured on this project and the team is on the
+  Hobby plan, so the branch rule is the only gate. To land an emergency
   fix while CI itself is broken, lift the rule, push, then restore it:
   `gh api -X DELETE repos/<owner>/<repo>/branches/main/protection`.
 - **Node version:** Vercel builds with Node 24.x while CI pins Node 22. Align them
