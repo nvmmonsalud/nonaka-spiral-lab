@@ -22,6 +22,7 @@ Before pushing, run the same checks CI runs:
 ```bash
 npm run lint
 npm run typecheck
+npm test
 npm run build
 ```
 
@@ -62,7 +63,7 @@ additional sources, and new case studies are welcome — cite your sources.
 
 1. Fork the repo and create a branch from `main`.
 2. Make your change; keep PRs small and focused.
-3. Ensure `lint`, `typecheck`, and `build` pass locally — CI runs the same
+3. Ensure `lint`, `typecheck`, `test`, and `build` pass locally — CI runs the same
    checks on every PR and must be green.
 4. Open a PR against `main`. The maintainer ([@nvmmonsalud](https://github.com/nvmmonsalud))
    reviews all external PRs. (The maintainer may push directly to `main`;

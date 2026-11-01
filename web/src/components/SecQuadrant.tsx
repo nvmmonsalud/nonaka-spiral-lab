@@ -38,24 +38,24 @@ export function SecQuadrant() {
         <text x="660" y="212" fontFamily="ui-monospace,Menlo,monospace" fontSize="11" fill="#D97757" textAnchor="middle">AI: expert-interview LLMs</text>
 
         {/* Combination */}
-        <text x="240" y="310" fontFamily="Georgia,serif" fontSize="26" fill="#141413" textAnchor="middle" fontWeight="500">COMBINATION</text>
-        <text x="240" y="338" fontFamily="ui-monospace,Menlo,monospace" fontSize="12" fill="#87867F" textAnchor="middle">explicit → explicit</text>
-        <text x="240" y="368" fontFamily="system-ui,sans-serif" fontSize="14" fill="#3D3D3A" textAnchor="middle">Synthesizing documents,</text>
-        <text x="240" y="390" fontFamily="system-ui,sans-serif" fontSize="14" fill="#3D3D3A" textAnchor="middle">databases, specs</text>
-        <text x="240" y="422" fontFamily="ui-monospace,Menlo,monospace" fontSize="11" fill="#788C5D" textAnchor="middle">AI: RAG, Glean, KGs — MATURE</text>
+        <text x="660" y="310" fontFamily="Georgia,serif" fontSize="26" fill="#141413" textAnchor="middle" fontWeight="500">COMBINATION</text>
+        <text x="660" y="338" fontFamily="ui-monospace,Menlo,monospace" fontSize="12" fill="#87867F" textAnchor="middle">explicit → explicit</text>
+        <text x="660" y="368" fontFamily="system-ui,sans-serif" fontSize="14" fill="#3D3D3A" textAnchor="middle">Synthesizing documents,</text>
+        <text x="660" y="390" fontFamily="system-ui,sans-serif" fontSize="14" fill="#3D3D3A" textAnchor="middle">databases, specs</text>
+        <text x="660" y="422" fontFamily="ui-monospace,Menlo,monospace" fontSize="11" fill="#788C5D" textAnchor="middle">AI: RAG, Glean, KGs — MATURE</text>
 
         {/* Internalization */}
-        <text x="660" y="310" fontFamily="Georgia,serif" fontSize="26" fill="#141413" textAnchor="middle" fontWeight="500">INTERNALIZATION</text>
-        <text x="660" y="338" fontFamily="ui-monospace,Menlo,monospace" fontSize="12" fill="#87867F" textAnchor="middle">explicit → tacit</text>
-        <text x="660" y="368" fontFamily="system-ui,sans-serif" fontSize="14" fill="#3D3D3A" textAnchor="middle">Learning by doing ·</text>
-        <text x="660" y="390" fontFamily="system-ui,sans-serif" fontSize="14" fill="#3D3D3A" textAnchor="middle">embodied mastery</text>
-        <text x="660" y="422" fontFamily="ui-monospace,Menlo,monospace" fontSize="11" fill="#D97757" textAnchor="middle">AI: Khanmigo, adaptive tutors</text>
+        <text x="240" y="310" fontFamily="Georgia,serif" fontSize="26" fill="#141413" textAnchor="middle" fontWeight="500">INTERNALIZATION</text>
+        <text x="240" y="338" fontFamily="ui-monospace,Menlo,monospace" fontSize="12" fill="#87867F" textAnchor="middle">explicit → tacit</text>
+        <text x="240" y="368" fontFamily="system-ui,sans-serif" fontSize="14" fill="#3D3D3A" textAnchor="middle">Learning by doing ·</text>
+        <text x="240" y="390" fontFamily="system-ui,sans-serif" fontSize="14" fill="#3D3D3A" textAnchor="middle">embodied mastery</text>
+        <text x="240" y="422" fontFamily="ui-monospace,Menlo,monospace" fontSize="11" fill="#D97757" textAnchor="middle">AI: Khanmigo, adaptive tutors</text>
 
-        {/* spiral arrows */}
-        <path d="M 240 235 L 240 250" stroke="#D97757" strokeWidth="2.5" markerEnd="url(#spiralArrow)" />
-        <path d="M 460 140 L 445 140" stroke="#D97757" strokeWidth="2.5" markerEnd="url(#spiralArrow)" />
-        <path d="M 240 445 L 240 430" stroke="#D97757" strokeWidth="2.5" markerEnd="url(#spiralArrow)" />
-        <path d="M 660 445 L 660 430" stroke="#D97757" strokeWidth="2.5" markerEnd="url(#spiralArrow)" />
+        {/* spiral arrows: S → E → C → I → S, clockwise */}
+        <path d="M 436 135 L 464 135" stroke="#D97757" strokeWidth="2.5" markerEnd="url(#spiralArrow)" />
+        <path d="M 660 226 L 660 254" stroke="#D97757" strokeWidth="2.5" markerEnd="url(#spiralArrow)" />
+        <path d="M 464 345 L 436 345" stroke="#D97757" strokeWidth="2.5" markerEnd="url(#spiralArrow)" />
+        <path d="M 240 254 L 240 226" stroke="#D97757" strokeWidth="2.5" markerEnd="url(#spiralArrow)" />
 
         <defs>
           <marker id="spiralArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
