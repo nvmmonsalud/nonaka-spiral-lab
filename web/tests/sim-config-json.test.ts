@@ -149,6 +149,41 @@ describe("importConfig: rejects, naming what is wrong", () => {
     expectError(text, /Unknown field "note"/);
   });
 
+  it("decodes every escape form before comparing keys", () => {
+    // The same key written twice: JSON shorthand versus the \u form of the same character.
+    const pairs: Array<[string, string]> = [
+      ["a\\nb", "a\\u000ab"], // newline
+      ["a\\tb", "a\\u0009b"], // tab
+      ["a\\rb", "a\\u000db"], // carriage return
+      ["a\\bb", "a\\u0008b"], // backspace
+      ["a\\fb", "a\\u000cb"], // form feed
+      ["a\\\\b", "a\\u005cb"], // backslash
+      ["a\\/b", "a\\u002fb"], // solidus
+      ['a\\"b', "a\\u0022b"], // quote
+    ];
+    for (const [shorthand, unicode] of pairs) {
+      expectError(`{"${shorthand}":1,"${unicode}":2}`, /appears more than once/);
+    }
+  });
+
+  it("treats a surrogate pair as one key, in either letter case or literal form", () => {
+    expectError('{"\\ud83d\\ude00":1,"\\uD83D\\uDE00":2}', /appears more than once/);
+    expectError('{"\\ud83d\\ude00":1,"😀":2}', /appears more than once/);
+  });
+
+  it("does not treat the same key in sibling objects as a repeat", () => {
+    // Rejected for the unknown envelope field, which proves the two `a` keys in
+    // separate array elements did not register as a duplicate within one object.
+    expectError(fileText(SAMPLE, { note: [{ a: 1 }, { a: 2 }] }), /Unknown field "note"/);
+  });
+
+  it("leaves malformed escapes to the JSON parser", () => {
+    // A truncated \u escape decodes to nothing; the scanner must bail rather than
+    // guess, and let JSON.parse phrase the error.
+    expectError('{"a\\u12":1}', /not valid JSON/);
+    expectError('{"a\\u12zz":1}', /not valid JSON/);
+  });
+
   it("rejects a different schema, or none", () => {
     expectError("{}", /Spiral Lab/);
     expectError(JSON.stringify({ schema: "other/thing", version: 1, initial: SAMPLE }), /Spiral Lab/);
