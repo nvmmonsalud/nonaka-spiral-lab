@@ -33,6 +33,9 @@ function downloadText(filename: string, text: string) {
 
 export default function ConfigControls({ getParams, onApply, onNotice, notice }: ConfigControlsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Monotonic guard for overlapping imports: only the most recently chosen file
+  // may apply. A slow earlier read must not land after a newer configuration.
+  const importSeqRef = useRef(0);
 
   const copyLink = async () => {
     const link = buildShareUrl(window.location.href, getParams());
@@ -62,13 +65,19 @@ export default function ConfigControls({ getParams, onApply, onNotice, notice }:
       onNotice("error", `Import failed: the file is too large (limit ${MAX_JSON_LENGTH} bytes).`);
       return;
     }
+    // Overlapping imports are possible while the first file is still reading; only
+    // the newest choice wins, so capture a ticket before awaiting.
+    const seq = ++importSeqRef.current;
     let text: string;
     try {
       text = await file.text();
     } catch {
-      onNotice("error", "Import failed: the file could not be read.");
+      if (seq === importSeqRef.current) {
+        onNotice("error", "Import failed: the file could not be read.");
+      }
       return;
     }
+    if (seq !== importSeqRef.current) return; // superseded by a newer selection
     const result = importConfig(text);
     if (!result.ok) {
       onNotice("error", `Import failed: ${result.error}`);
