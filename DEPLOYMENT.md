@@ -133,8 +133,8 @@ rebuild:
   gh api -X PUT repos/$REPO/branches/main/protection --input /tmp/protection.json
   gh api repos/$REPO/branches/main/protection                          # confirm
   ```
-- **Node version:** Vercel builds with Node 24.x while CI pins Node 22. Align them
-  if a build ever behaves differently in CI than in production.
+- **Node version:** CI and Vercel both build on Node 24. Keep them in step — CI
+  validating a different runtime than production is how a green check lies.
 - **Rolling back** is a Vercel operation: promote the previous deployment from
   the project's *Deployments* tab. There is no `git revert` dance required.
 - **No scheduled jobs, no database, nothing to migrate.** Redeploying is
