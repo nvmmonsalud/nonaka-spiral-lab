@@ -8,8 +8,12 @@ surface is limited to:
 
 - Cross-site scripting via rendered content (e.g. preset data)
 - Supply-chain issues in npm dependencies or GitHub Actions
-- The CI/CD pipeline (Vercel deploy secrets are stored as GitHub repository
-  secrets and are never exposed to pull requests from forks)
+- The build and deploy pipeline: pushes to `main` deploy to production through
+  Vercel's Git integration, which authenticates via the Vercel GitHub App. No
+  deploy token is stored in GitHub Actions, and no application secrets exist.
+  Preview deployments for branches are publicly readable, which is acceptable
+  while the repository and all simulated data are public — revisit if private
+  presets or credentials are ever added.
 
 ## Supported versions
 

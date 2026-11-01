@@ -23,7 +23,7 @@ npm test           # vitest run — engine + presets (CI runs this)
 npm run build      # production build — CI fails fast on compile errors
 ```
 
-Tests live in `web/tests/` (Vitest, node environment, no DOM). CI (`.github/workflows/ci.yml`) runs lint + typecheck + test + build on PRs and pushes to `main`; `.github/workflows/deploy.yml` then deploys to Vercel production on every push to `main`, so a broken build on `main` blocks deploys. Run all four locally before pushing.
+Tests live in `web/tests/` (Vitest, node environment, no DOM). CI (`.github/workflows/ci.yml`) runs lint + typecheck + test + build on PRs and pushes to `main`. Deploys are handled by **Vercel's Git integration, not a workflow**: a push to `main` promotes to production without Vercel waiting for CI. What keeps unverified code out is GitHub's rule on `main`, which requires the `build` check (admins included) before any update lands. That rule is not independent review — a change to `ci.yml` or `package.json` can redefine what `build` proves — so treat workflow and dependency edits as review-worthy on their own.
 
 ## Next.js version warning
 

@@ -12,23 +12,45 @@ This clones the repo into your GitHub account and creates a Vercel project.
 If the wizard doesn't pick it up automatically, set **Root Directory** to
 `web` in the project settings.
 
-## Option 2 — Fork + GitHub Actions auto-deploy
+## Option 2 — Fork + Vercel Git integration (auto-deploy on push)
 
-The repo ships a workflow (`.github/workflows/deploy.yml`) that deploys to
-Vercel production on every push to `main`. To use it in your fork:
+There is **no deploy workflow**. Vercel's Git integration builds and promotes
+on push, which keeps every deploy credential out of CI.
 
 1. Fork this repository.
-2. Create a Vercel project for the fork (root directory `web`), or run
-   `npx vercel link` inside `web/` locally.
-3. Add three **repository secrets** in your fork
-   (Settings → Secrets and variables → Actions):
-   - `VERCEL_TOKEN` — create at [vercel.com/account/tokens](https://vercel.com/account/tokens)
-   - `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` — found in `web/.vercel/project.json`
-     after `vercel link`, or in the Vercel project settings.
-4. Push to `main`. The workflow lints, typechecks, builds, and deploys.
+2. In Vercel, **Add New → Project**, then import your fork.
+3. Set **Root Directory** to `web`. This step is not optional: the Next.js app
+   lives there, so with the setting empty Vercel builds from the repo root and
+   fails with `NEXT_NO_VERSION — No Next.js version detected`.
+4. Leave **Production Branch** as `main`. Pushes to `main` deploy to production;
+   other branches get preview deployments when they push and the build succeeds
+   (failed builds, and fork PRs awaiting approval, do not).
 
-Pull requests never receive these secrets — CI for PRs
-(`.github/workflows/ci.yml`) runs with a read-only token and no secrets.
+No repository secrets are needed — the integration authenticates through the
+Vercel GitHub App, not a token.
+
+> **Vercel does not wait for CI.** It runs its own `next build`, so a commit that
+> does not compile never publishes — but Vercel never runs your lint or tests, so
+> a commit whose tests fail would ship if it reached `main`. What stops that is
+> GitHub's rule on `main` (see *Operational notes*), not Vercel.
+>
+> Know the limit of that rule: it binds the check named `build` to the GitHub
+> Actions app, not to the contents of this repository's workflow. A change to
+> `ci.yml` or `package.json` can redefine what "passing" means, so those edits
+> need review on their own — the rule prevents accidental unverified updates, not
+> a determined writer.
+
+**Manual deploys are break-glass, not routine.** `npx vercel --prod` publishes
+whatever is in your working tree — uncommitted edits, a feature branch, anything
+— and bypasses the `main` rule entirely. If you use it, deploy an identified
+checked commit and nothing else:
+
+```bash
+cd web
+git switch main && git pull --ff-only   # a checked, known-good commit
+git status --porcelain                  # must print nothing
+npx vercel --prod                       # after `npx vercel link` once
+```
 
 ## Option 3 — Static hosting (GitHub Pages, Netlify, any static server)
 
@@ -87,11 +109,33 @@ rebuild:
 ## Operational notes
 
 - **Runtime requirements:** Node.js 22+ to build; any static/edge host to serve.
-- **No secrets in the app.** The only secrets anywhere in the project are the
-  three Vercel deploy credentials used by CI (`VERCEL_TOKEN`, `VERCEL_ORG_ID`,
-  `VERCEL_PROJECT_ID`), which must be stored as GitHub repo secrets. `VERCEL_TOKEN`
-  is the one that is easy to forget: `deploy.yml` passes it as `--token=`, so if it
-  is absent the step fails with `You defined "--token", but it's missing a value`
-  and the deploy is skipped.
+- **No GitHub Actions deployment secrets.** No `VERCEL_TOKEN` and no repository
+  secrets are configured or required — deploys authenticate through the Vercel
+  GitHub App. The project/org IDs in `web/.vercel/project.json` are non-secret
+  metadata for local CLI use, and that file is gitignored.
+- **`main` is protected.** An update must pass the `build` check first — `strict`,
+  enforced against admins too — and force-pushes and deletions are blocked. This
+  is what stops unverified code from reaching production through the normal push
+  path; Vercel's own Deployment Checks would be a second layer, but none are
+  configured on this project. The rule is not independent review: see the caveat
+  in Option 2 about workflow and dependency edits.
+- **Break-glass procedure.** If production is broken, roll back in Vercel first
+  (below) rather than bypassing the rule. If a push really is required while CI
+  itself is down, save the rule before lifting it and restore it immediately —
+  an interrupted break-glass leaves `main` unprotected and Vercel will publish
+  whatever lands:
+
+  ```bash
+  REPO=owner/name
+  gh api repos/$REPO/branches/main/protection > /tmp/protection.json   # save
+  gh api -X DELETE repos/$REPO/branches/main/protection                # lift
+  #   ... push the emergency commit ...
+  gh api -X PUT repos/$REPO/branches/main/protection --input /tmp/protection.json
+  gh api repos/$REPO/branches/main/protection                          # confirm
+  ```
+- **Node version:** Vercel builds with Node 24.x while CI pins Node 22. Align them
+  if a build ever behaves differently in CI than in production.
+- **Rolling back** is a Vercel operation: promote the previous deployment from
+  the project's *Deployments* tab. There is no `git revert` dance required.
 - **No scheduled jobs, no database, nothing to migrate.** Redeploying is
   always just a rebuild.

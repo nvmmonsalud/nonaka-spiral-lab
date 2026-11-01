@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, type ChangeEvent } from "react";
-import { MAX_JSON_LENGTH, buildShareUrl, exportConfig, importConfig } from "@/lib/sim-config";
+import { useEffect, useRef, type ChangeEvent } from "react";
+import { buildShareUrl, exportConfig } from "@/lib/sim-config";
+import { importChosenFile } from "@/lib/import-flow";
 import type { SimParams } from "@/lib/spiral-engine";
 
 export interface ConfigNotice {
@@ -37,6 +38,15 @@ export default function ConfigControls({ getParams, onApply, onNotice, notice }:
   // may apply. A slow earlier read must not land after a newer configuration.
   const importSeqRef = useRef(0);
 
+  // A read that lands after unmount has nothing left to apply to; superseding it
+  // stops the flow from calling back into a component that no longer exists.
+  useEffect(
+    () => () => {
+      importSeqRef.current += 1;
+    },
+    [],
+  );
+
   const copyLink = async () => {
     const link = buildShareUrl(window.location.href, getParams());
     // Put the configuration in the address bar too: a reload keeps it, and if the
@@ -56,34 +66,23 @@ export default function ConfigControls({ getParams, onApply, onNotice, notice }:
     onNotice("ok", `Downloaded ${EXPORT_FILENAME}.`);
   };
 
-  const onFileChosen = async (event: ChangeEvent<HTMLInputElement>) => {
+  const onFileChosen = (event: ChangeEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
     const file = input.files?.[0];
     input.value = ""; // lets the same file be chosen again after it is edited
     if (!file) return;
-    if (file.size > MAX_JSON_LENGTH) {
-      onNotice("error", `Import failed: the file is too large (limit ${MAX_JSON_LENGTH} bytes).`);
-      return;
-    }
-    // Overlapping imports are possible while the first file is still reading; only
-    // the newest choice wins, so capture a ticket before awaiting.
-    const seq = ++importSeqRef.current;
-    let text: string;
-    try {
-      text = await file.text();
-    } catch {
-      if (seq === importSeqRef.current) {
-        onNotice("error", "Import failed: the file could not be read.");
-      }
-      return;
-    }
-    if (seq !== importSeqRef.current) return; // superseded by a newer selection
-    const result = importConfig(text);
-    if (!result.ok) {
-      onNotice("error", `Import failed: ${result.error}`);
-      return;
-    }
-    onApply(result.value, "Imported the configuration from a file.");
+    // The sequencing rules live in importChosenFile so they can be tested without a DOM.
+    void importChosenFile(file, {
+      takeTicket: () => ++importSeqRef.current,
+      isCurrent: (ticket) => ticket === importSeqRef.current,
+      reject: (message) => onNotice("error", message),
+      apply: onApply,
+    }).catch((error: unknown) => {
+      // Only a throwing sink callback reaches here — read failures and invalid
+      // configurations are reported through `reject`. Log rather than call
+      // onNotice, which may be the callback that just threw.
+      console.error("Configuration import failed unexpectedly:", error);
+    });
   };
 
   return (

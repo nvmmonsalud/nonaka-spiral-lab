@@ -77,9 +77,9 @@ npm run dev
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fnvmmonsalud%2Fnonaka-spiral-lab&root-directory=web&project-name=nonaka-spiral-lab)
 
 The app is pure client-side, so it deploys anywhere — one-click Vercel, a fork
-with auto-deploy via GitHub Actions, or static export to any host. Details,
-including how to ship custom presets in a private deployment, are in
-[DEPLOYMENT.md](DEPLOYMENT.md).
+connected to Vercel's Git integration for auto-deploy on push, or static export
+to any host. Details, including how to ship custom presets in a private
+deployment, are in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Contributing
 
