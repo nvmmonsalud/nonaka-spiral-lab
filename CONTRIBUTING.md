@@ -46,6 +46,9 @@ Conventions for presets:
   issue/PR — see `research/expansion-research.md` for how existing presets are
   grounded.
 - Accepted presets are credited in [CONTRIBUTORS.md](CONTRIBUTORS.md).
+- Tip: build the scenario with the sliders, click **Export JSON**, and paste the `initial`
+  block of the downloaded file into your entry (or issue). `npm test` checks it against the
+  same bounds the simulator enforces.
 
 ### 2. Report bugs and propose features
 
@@ -75,6 +78,8 @@ additional sources, and new case studies are welcome — cite your sources.
 - Follow the existing patterns in `web/src/components/` — in particular,
   `SpiralSimulator.tsx` keeps live simulation values in refs so the
   `requestAnimationFrame` loop runs without re-rendering; preserve that split.
+- Lever ranges live in one place, `PARAM_SPECS` in `web/src/lib/sim-config.ts`; don't
+  hardcode slider ranges or preset bounds elsewhere.
 - Styling uses the design tokens in `web/src/app/globals.css`
   (ivory/clay/olive/rust palette) — reuse tokens, don't hardcode colors.
 - **No new runtime dependencies without prior discussion.** The app is
