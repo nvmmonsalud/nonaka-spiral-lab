@@ -2,3 +2,9 @@
 *.log
 .vercel
 .env*
+
+# Local agent/editor scaffolding — never public
+.claude/
+.superpowers/
+/AGENTS.md
+/GEMINI.md

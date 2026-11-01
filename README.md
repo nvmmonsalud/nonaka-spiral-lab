@@ -36,6 +36,16 @@ stalls, the green-milk context failure — then tune the levers:
 - Red = corrupted (false externalization) · Dashed ring = level 3+ knowledge
 - Each full SECI cycle escalates one ontological level (individual → group → org → inter-org)
 
+Any setup can be shared or saved:
+
+- **Copy link** puts the eight lever values in the URL (`/simulator?humans=6&agents=3&...`)
+  and on your clipboard. Opening the link starts the simulation with exactly those values.
+- **Export JSON / Import JSON** saves a setup to a small file and loads it back. The file's
+  `initial` block has the same shape as an entry in `web/data/presets.json`.
+
+Links and files are checked strictly: a value outside a slider's range is rejected with a
+message, not quietly adjusted.
+
 ## Research
 
 The app is grounded in a full research paper: *Knowledge Creation in the Age of
@@ -92,7 +102,8 @@ questions and preset ideas.
 ```
 ├── web/                    # Next.js app
 │   ├── src/app/            # routes: /, /simulator, /research
-│   ├── src/components/     # SpiralSimulator (canvas), SecQuadrant (SVG)
+│   ├── src/components/     # SpiralSimulator (canvas), ConfigControls, SecQuadrant (SVG)
+│   ├── src/lib/            # spiral-engine (model), sim-config (link + file codec)
 │   └── data/presets.json   # simulator presets
 ├── research/               # source registry + expansion research
 ├── results/                # paper, theory brief, matrix, case studies
