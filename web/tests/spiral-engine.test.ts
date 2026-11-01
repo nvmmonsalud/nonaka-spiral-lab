@@ -125,6 +125,20 @@ describe("convertParticle", () => {
     expect(out.score).toBe(20);
   });
 
+  it("refuses to machine-transfer corrupted knowledge", () => {
+    const pt = make("agent", "C", 2);
+    pt.corrupted = true;
+    const out = convertParticle(pt, { ...P, machineTransfer: 1 }, scripted(0));
+    expect(out.result).toBe("stall");
+    expect(out.events[0].kind).toBe("warn");
+    expect(out.events[0].msg).toMatch(/needs human review/);
+    expect(pt.level).toBe(2);
+    expect(pt.quad).toBe("C");
+    expect(pt.corrupted).toBe(true);
+    expect(out.cycles).toBe(0);
+    expect(out.score).toBe(0);
+  });
+
   it("repairs corrupted knowledge through the feedback loop", () => {
     const pt = make("human", "E");
     pt.corrupted = true;
@@ -181,6 +195,19 @@ describe("stepParticle", () => {
     const out = stepParticle(pt, 0.016, true, { ...P, baChaos: 0.8 }, scripted(0.99, 0));
     expect(out?.result).toBe("regress");
     expect(pt.cooldown).toBeLessThanOrEqual(0);
+  });
+
+  it("cannot regress out of socialization, so a failed roll re-arms the cooldown", () => {
+    // Chaos regression has nowhere to go from S. If it "regressed" to S the particle
+    // would stay on its anchor and retry on the next frame, so conversion odds would
+    // scale with frame rate instead of with COOLDOWN_MIN.
+    const pt = make("human", "S");
+    // 0.99 fails the conversion roll, then 0 passes the chaos roll: without the guard
+    // that second draw regresses to S and leaves the cooldown at <= 0.
+    const out = stepParticle(pt, 0.016, true, { ...P, baChaos: 0.8 }, scripted(0.99, 0, 0));
+    expect(out?.result).toBe("stall");
+    expect(pt.quad).toBe("S");
+    expect(pt.cooldown).toBeGreaterThanOrEqual(COOLDOWN_MIN);
   });
 
   it("scales throughput with population (no shared cooldown)", () => {

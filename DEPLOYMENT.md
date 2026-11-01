@@ -72,8 +72,8 @@ rebuild:
   "icon": "🏭",
   "description": "What this scenario models and why.",
   "initial": {
-    "humans": 6,            // 1–20 knowledge workers
-    "agents": 3,            // 1–20 AI agents
+    "humans": 6,            // 0–12 knowledge workers
+    "agents": 3,            // 0–12 AI agents
     "baRedundancy": 0.7,    // 0–1 shared context / overlapping knowledge
     "baChaos": 0.6,         // 0–1 creative turbulence
     "baAutonomy": 0.6,      // 0–1 self-organization
@@ -88,6 +88,10 @@ rebuild:
 
 - **Runtime requirements:** Node.js 22+ to build; any static/edge host to serve.
 - **No secrets in the app.** The only secrets anywhere in the project are the
-  three Vercel deploy credentials used by CI, stored as GitHub repo secrets.
+  three Vercel deploy credentials used by CI (`VERCEL_TOKEN`, `VERCEL_ORG_ID`,
+  `VERCEL_PROJECT_ID`), which must be stored as GitHub repo secrets. `VERCEL_TOKEN`
+  is the one that is easy to forget: `deploy.yml` passes it as `--token=`, so if it
+  is absent the step fails with `You defined "--token", but it's missing a value`
+  and the deploy is skipped.
 - **No scheduled jobs, no database, nothing to migrate.** Redeploying is
   always just a rebuild.

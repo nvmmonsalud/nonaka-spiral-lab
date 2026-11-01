@@ -129,7 +129,12 @@ export function convertParticle(pt: Particle, p: SimParams, rng: Rng = Math.rand
 
   if (!success) {
     // Chaotic environments sometimes move knowledge *back* a mode — creative chaos.
-    if (p.baChaos > 0.7 && rng() < 0.25) {
+    // Socialization is the start of the spiral, so there is nowhere further back to
+    // go: an S particle stalls instead, which re-arms its cooldown below. Without
+    // this guard the particle stays on its anchor after "regressing" to S and
+    // becomes eligible again on the very next frame, so its conversion odds end up
+    // scaling with frame rate instead of with COOLDOWN_MIN.
+    if (p.baChaos > 0.7 && pt.quad !== "S" && rng() < 0.25) {
       pt.quad = "S";
       out.result = "regress";
       return out;
@@ -140,6 +145,16 @@ export function convertParticle(pt: Particle, p: SimParams, rng: Rng = Math.rand
 
   // Machine transfer: at high machineTransfer, agent knowledge skips human articulation
   if (pt.kind === "agent" && p.machineTransfer > 0.6 && rng() < p.machineTransfer * 0.4) {
+    // False externalization must be caught by human judgment before it propagates:
+    // corrupted knowledge does not get to skip articulation and level up with it.
+    if (pt.corrupted) {
+      out.result = "stall";
+      out.events.push({
+        msg: "Machine transfer refused: corrupted agent knowledge needs human review before it can propagate.",
+        kind: "warn",
+      });
+      return out;
+    }
     levelUp(pt, out);
     if (pt.level >= MAX_LEVEL && rng() < 0.2) {
       out.events.push({
