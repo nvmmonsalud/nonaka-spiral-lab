@@ -31,3 +31,19 @@ GitHub's private vulnerability reporting:
 
 You can expect an initial response within a week. Once a fix ships, the report
 will be credited (unless you prefer to remain anonymous).
+
+## Known accepted risks
+
+- **`minimatch` below 11.0.1 (moderate, build-time only).** Reached through
+  ESLint's config loader (`^3.1.5`) and `@typescript-eslint/typescript-estree`
+  (`^10.2.2`). The patched release is 11.0.1, which sits outside both parents'
+  ranges. Remediation therefore needs compatible releases from each consumer —
+  ESLint 10 (tracked in #17) is one, and `typescript-eslint` is a separate
+  consumer with its own dependency — not a version bump. Forcing `minimatch@11`
+  onto consumers written against v3 is a breakage, not a fix. Reaching the
+  vulnerable path requires attacker-controlled glob patterns during lint, which
+  means changing lint configuration; that is governed by the same review
+  boundary as any other build change, not by dependency classification alone.
+- **Dev dependencies carry advisories; the shipped bundle does not.**
+  `npm audit --omit=dev` reports zero. The application ships only `next`,
+  `react` and `react-dom`; everything else is build and lint tooling.
