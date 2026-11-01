@@ -118,6 +118,37 @@ describe("importConfig: rejects, naming what is wrong", () => {
     for (const text of ["null", "[]", "[1,2]", "42", '"hi"', "true"]) expectError(text, /object/i);
   });
 
+  it("rejects a repeated envelope field that JSON.parse would silently collapse", () => {
+    const text = `{"schema":"${CONFIG_SCHEMA}","version":${CONFIG_VERSION},"version":${CONFIG_VERSION},"initial":${JSON.stringify(SAMPLE)}}`;
+    expectError(text, /"version" appears more than once/);
+  });
+
+  it("rejects a repeated lever inside `initial`, where the last value used to win", () => {
+    // Before this check, {"humans":99,"humans":7} imported as 7 and the 99 was
+    // never seen by validation at all.
+    const initial = JSON.stringify(SAMPLE).replace('"humans":7', '"humans":99,"humans":7');
+    const text = `{"schema":"${CONFIG_SCHEMA}","version":${CONFIG_VERSION},"initial":${initial}}`;
+    expectError(text, /"humans" appears more than once/);
+  });
+
+  it("finds a repeat at any depth, not just in the envelope", () => {
+    const text = `{"schema":"${CONFIG_SCHEMA}","version":${CONFIG_VERSION},"initial":${JSON.stringify(SAMPLE)},"extra":{"a":1,"a":2}}`;
+    expectError(text, /"a" appears more than once/);
+  });
+
+  it("treats an escaped spelling of a key as the same key", () => {
+    const initial = JSON.stringify(SAMPLE).replace('"humans":7', '"hum\\u0061ns":7,"humans":7');
+    const text = `{"schema":"${CONFIG_SCHEMA}","version":${CONFIG_VERSION},"initial":${initial}}`;
+    expectError(text, /"humans" appears more than once/);
+  });
+
+  it("does not mistake repeated text inside a string value for a repeated key", () => {
+    const text = `{"schema":"${CONFIG_SCHEMA}","version":${CONFIG_VERSION},"initial":${JSON.stringify(SAMPLE)},"note":"humans humans humans"}`;
+    // Rejected for the unknown field, which proves the duplicate check passed it through
+    // instead of tripping over "humans" appearing three times inside a value.
+    expectError(text, /Unknown field "note"/);
+  });
+
   it("rejects a different schema, or none", () => {
     expectError("{}", /Spiral Lab/);
     expectError(JSON.stringify({ schema: "other/thing", version: 1, initial: SAMPLE }), /Spiral Lab/);
