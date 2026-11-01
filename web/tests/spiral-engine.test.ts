@@ -128,7 +128,8 @@ describe("convertParticle", () => {
   it("refuses to machine-transfer corrupted knowledge", () => {
     const pt = make("agent", "C", 2);
     pt.corrupted = true;
-    const out = convertParticle(pt, { ...P, machineTransfer: 1 }, scripted(0));
+    // two draws: the conversion roll, then the transfer roll
+    const out = convertParticle(pt, { ...P, machineTransfer: 1 }, scripted(0, 0));
     expect(out.result).toBe("stall");
     expect(out.events[0].kind).toBe("warn");
     expect(out.events[0].msg).toMatch(/needs human review/);
