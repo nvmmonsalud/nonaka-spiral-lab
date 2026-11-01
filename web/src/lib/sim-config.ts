@@ -167,10 +167,111 @@ export function exportConfig(params: SimParams): string {
 }
 
 /**
+ * JSON.parse keeps the last of two identical keys, so `{"humans": 99, "humans": 6}`
+ * parses as 6 and the 99 never exists to be validated. The share-link parser rejects
+ * a repeated lever outright (`parseParams`), so the file importer has to as well or
+ * the two entry points disagree about what a strict configuration is.
+ *
+ * JSON.parse cannot help here: duplicates are already collapsed by the time it
+ * returns, so this walks the raw text and reports the first key repeated within one
+ * object, at any depth. Escapes are decoded, so `"hum\u0061ns"` collides with
+ * `"humans"` exactly as it does after parsing.
+ *
+ * Returns null when nothing repeats, and also when the text is malformed: JSON.parse
+ * owns that error and phrases it better.
+ */
+function findRepeatedKey(text: string): string | null {
+  interface Frame {
+    kind: "object" | "array";
+    keys: Set<string>;
+    expectKey: boolean;
+  }
+  const stack: Frame[] = [];
+  let i = 0;
+
+  const readString = (): string | null => {
+    i += 1; // opening quote
+    let out = "";
+    while (i < text.length) {
+      const c = text[i];
+      if (c === '"') {
+        i += 1;
+        return out;
+      }
+      if (c !== "\\") {
+        out += c;
+        i += 1;
+        continue;
+      }
+      const esc = text[i + 1];
+      i += 2;
+      switch (esc) {
+        case '"': out += '"'; break;
+        case "\\": out += "\\"; break;
+        case "/": out += "/"; break;
+        case "b": out += "\b"; break;
+        case "f": out += "\f"; break;
+        case "n": out += "\n"; break;
+        case "r": out += "\r"; break;
+        case "t": out += "\t"; break;
+        case "u": {
+          const hex = text.slice(i, i + 4);
+          if (!/^[0-9a-fA-F]{4}$/.test(hex)) return null;
+          out += String.fromCharCode(parseInt(hex, 16));
+          i += 4;
+          break;
+        }
+        default:
+          return null; // not JSON; JSON.parse reports it
+      }
+    }
+    return null; // unterminated string
+  };
+
+  while (i < text.length) {
+    const c = text[i];
+    if (c === '"') {
+      const frame = stack[stack.length - 1];
+      const s = readString();
+      if (s === null) return null;
+      if (frame?.kind === "object" && frame.expectKey) {
+        if (frame.keys.has(s)) return s;
+        frame.keys.add(s);
+        frame.expectKey = false;
+      }
+      continue;
+    }
+    if (c === "{") {
+      stack.push({ kind: "object", keys: new Set(), expectKey: true });
+      i += 1;
+      continue;
+    }
+    if (c === "[") {
+      stack.push({ kind: "array", keys: new Set(), expectKey: false });
+      i += 1;
+      continue;
+    }
+    if (c === "}" || c === "]") {
+      stack.pop();
+      i += 1;
+      continue;
+    }
+    if (c === ",") {
+      const frame = stack[stack.length - 1];
+      if (frame?.kind === "object") frame.expectKey = true;
+      i += 1;
+      continue;
+    }
+    i += 1; // whitespace, ':', digits, literals
+  }
+  return null;
+}
+
+/**
  * Strictly parses config file text. Rejects (never clamps) anything that is not
- * exactly what `exportConfig` writes: bad JSON, wrong schema or version,
- * unknown or missing fields, wrong types, non-finite or out-of-range numbers,
- * fractional head-counts, and oversized text. Never throws.
+ * exactly what `exportConfig` writes: bad JSON, a key repeated within one object,
+ * wrong schema or version, unknown or missing fields, wrong types, non-finite or
+ * out-of-range numbers, fractional head-counts, and oversized text. Never throws.
  */
 export function importConfig(text: string): Result<SimParams> {
   if (text.length > MAX_JSON_LENGTH) {
@@ -178,6 +279,8 @@ export function importConfig(text: string): Result<SimParams> {
   }
   // Windows editors save "UTF-8 with BOM"; JSON.parse rejects the leading U+FEFF.
   const body = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+  const repeated = findRepeatedKey(body);
+  if (repeated !== null) return fail(`${quote(repeated)} appears more than once in the file.`);
   let doc: unknown;
   try {
     doc = JSON.parse(body);
