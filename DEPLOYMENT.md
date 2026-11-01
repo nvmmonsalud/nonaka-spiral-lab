@@ -28,11 +28,13 @@ on push, which keeps every deploy credential out of CI.
 No repository secrets are needed — the integration authenticates through the
 Vercel GitHub App, not a token.
 
-> **CI is a detector, not a gate.** Vercel deploys on push and does not wait for
-> `.github/workflows/ci.yml` to finish, so a commit that fails lint, typecheck,
-> tests, or build can still reach production. Land changes through a PR with
+> **CI is a detector, not a gate.** Vercel runs its own build, so a commit that
+> does not compile will not publish. But Vercel does not wait for
+> `.github/workflows/ci.yml`: a commit whose **lint or tests** fail still reaches
+> production, because Vercel never runs them. Land changes through a PR with
 > green checks, or run `npm run lint && npm run typecheck && npm test && npm run
-> build` locally before pushing to `main`.
+> build` locally before pushing to `main`. Requiring the `build` check on `main`
+> is what turns CI into an actual gate — see *Operational notes*.
 
 **Manual deploys** (useful for hotfixes and for previewing without a push):
 
@@ -102,8 +104,15 @@ rebuild:
   and no repository secrets at all — deploys authenticate through the Vercel
   GitHub App. (The org/project IDs remain in `web/.vercel/project.json` for
   local CLI use, and that file is gitignored.)
-- **Deploys are not gated on CI.** A push to `main` promotes to production
-  whether or not `.github/workflows/ci.yml` passed; see the note in Option 2.
+- **`main` is protected.** A push must pass the `build` check first — `strict`,
+  and enforced against admins too — and force-pushes and deletions are blocked.
+  Because Vercel deploys on push to `main`, this protection is what actually
+  keeps untested code out of production; Vercel's own Deployment Checks would be
+  a second layer but are not available on the Hobby plan. To land an emergency
+  fix while CI itself is broken, lift the rule, push, then restore it:
+  `gh api -X DELETE repos/<owner>/<repo>/branches/main/protection`.
+- **Node version:** Vercel builds with Node 24.x while CI pins Node 22. Align them
+  if a build ever behaves differently in CI than in production.
 - **Rolling back** is a Vercel operation: promote the previous deployment from
   the project's *Deployments* tab. There is no `git revert` dance required.
 - **No scheduled jobs, no database, nothing to migrate.** Redeploying is
