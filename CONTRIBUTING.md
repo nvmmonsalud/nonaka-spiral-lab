@@ -8,7 +8,8 @@ By participating you agree to our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Development setup
 
-You need Node.js 22+. All app code lives in `web/`:
+You need Node.js 24 — that is what CI and Vercel build with, and 22.13+ also works
+(ESLint 10 rejects 22.0–22.12). All app code lives in `web/`:
 
 ```bash
 cd web
@@ -25,6 +26,14 @@ npm run typecheck
 npm test
 npm run build
 ```
+
+**On ESLint 10.** `eslint-config-next` 16.4.3 bundles three plugins —
+`eslint-plugin-import`, `eslint-plugin-jsx-a11y` and `eslint-plugin-react` — whose
+declared peer range stops at ESLint 9. Lint passes on 10 and CI is green, but
+`npm ci --strict-peer-deps` fails on that combination, so any tooling that
+enforces peers strictly will refuse to install. This is a deliberate, temporary
+exception until those plugins publish ESLint 10 support. If you need a clean peer
+graph today, pin `eslint@^9`; lint output is identical.
 
 ## Ways to contribute
 
