@@ -23,7 +23,7 @@ npm test           # vitest run — engine + presets (CI runs this)
 npm run build      # production build — CI fails fast on compile errors
 ```
 
-Tests live in `web/tests/` (Vitest, node environment, no DOM). CI (`.github/workflows/ci.yml`) runs lint + typecheck + test + build on PRs and pushes to `main`; `.github/workflows/deploy.yml` then deploys to Vercel production on every push to `main`, so a broken build on `main` blocks deploys. Run all four locally before pushing.
+Tests live in `web/tests/` (Vitest, node environment, no DOM). CI (`.github/workflows/ci.yml`) runs lint + typecheck + test + build on PRs and pushes to `main`. Deploys are handled by **Vercel's Git integration, not a workflow**: a push to `main` promotes to production without waiting for CI, so a red build on `main` *does* reach production. CI is a detector, not a gate — run all four locally, or land through a green PR, before pushing to `main`.
 
 ## Next.js version warning
 
