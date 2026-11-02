@@ -32,19 +32,26 @@ GitHub's private vulnerability reporting:
 You can expect an initial response within a week. Once a fix ships, the report
 will be credited (unless you prefer to remain anonymous).
 
-## Known accepted risks
+## Dependency advisory mitigation
 
-- **`minimatch` below 11.0.1 (moderate, build-time only).** Reached through
-  ESLint's config loader (`^3.1.5`) and `@typescript-eslint/typescript-estree`
-  (`^10.2.2`). The patched release is 11.0.1, which sits outside both parents'
-  ranges. Remediation therefore needs compatible releases from each consumer —
-  an ESLint major whose bundled plugins also support it is one, and
-  `typescript-eslint` is a separate consumer with its own dependency — not a
-  version bump. Forcing `minimatch@11`
-  onto consumers written against v3 is a breakage, not a fix. Reaching the
-  vulnerable path requires attacker-controlled glob patterns during lint, which
-  means changing lint configuration; that is governed by the same review
-  boundary as any other build change, not by dependency classification alone.
+- **`minimatch` GHSA-g3hv-75wg-m249 (moderate, build-time only).**
+  `npm ci` runs `web/scripts/patch-minimatch.mjs`, backporting the expansion limit
+  and large-set comparison guard from
+  [upstream commit 77a0f5c](https://github.com/isaacs/minimatch/commit/77a0f5c)
+  to both the CommonJS and ESM entry points of the installed minimatch 10.2.6.
+  The default expansion limit is lowered from upstream's 100,000 to 1,000:
+  compiling 100,000 generated patterns still consumed excessive memory in the
+  regression test. Explicit `braceExpandMax` options retain upstream behavior.
+  Source hashes and installed versions are checked; an unexpected dependency
+  update fails installation and requires reassessment. Tests exercise the installed
+  entry points with hostile patterns in time- and memory-limited subprocesses.
+  Minimatch 3.1.5, used by ESLint and its plugins, has no affected
+  `firstPhasePreProcess` implementation and does not need this backport.
+  Registry audits still flag both versions because they cannot see local patches
+  and the advisory's range includes v3. Do not suppress the audit or force v11
+  onto v3 consumers. Remove the backport once compatible upstream consumers use
+  a patched release. Installs with `--ignore-scripts` do not apply the mitigation;
+  run `node scripts/patch-minimatch.mjs` from `web/` before using tooling in that case.
 - **Dev dependencies carry advisories; the shipped bundle does not.**
   `npm audit --omit=dev` reports zero. The application ships only `next`,
   `react` and `react-dom`; everything else is build and lint tooling.
