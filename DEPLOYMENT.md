@@ -120,20 +120,15 @@ rebuild:
   path; Vercel's own Deployment Checks would be a second layer, but none are
   configured on this project. The rule is not independent review: see the caveat
   in Option 2 about workflow and dependency edits.
-- **Break-glass procedure.** If production is broken, roll back in Vercel first
-  (below) rather than bypassing the rule. If a push really is required while CI
-  itself is down, save the rule before lifting it and restore it immediately —
-  an interrupted break-glass leaves `main` unprotected and Vercel will publish
-  whatever lands:
-
-  ```bash
-  REPO=owner/name
-  gh api repos/$REPO/branches/main/protection > /tmp/protection.json   # save
-  gh api -X DELETE repos/$REPO/branches/main/protection                # lift
-  #   ... push the emergency commit ...
-  gh api -X PUT repos/$REPO/branches/main/protection --input /tmp/protection.json
-  gh api repos/$REPO/branches/main/protection                          # confirm
-  ```
+- **Recovery procedure.** If production is broken, promote the previous known-good
+  deployment in Vercel (below), leaving GitHub branch protection enabled. Verify
+  the production URL after promotion, then repair CI or prepare the fix on a
+  branch and merge only after the required checks pass. If CI is unavailable,
+  keep the known-good deployment live until it recovers.
+  Do not delete branch protection to push an emergency fix. In particular, a
+  saved `GET /branches/main/protection` response is not a valid restore payload
+  for `PUT`: fields such as `enforce_admins` have different response and request
+  shapes. Replaying that response can fail after protection has been removed.
 - **Node version:** CI and Vercel both build on Node 24. Keep them in step — CI
   validating a different runtime than production is how a green check lies.
 - **Rolling back** is a Vercel operation: promote the previous deployment from

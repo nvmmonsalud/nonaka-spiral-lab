@@ -7,6 +7,7 @@
     "node": "^20.19.0 || ^22.13.0 || >=24"
   },
   "scripts": {
+    "postinstall": "node scripts/patch-minimatch.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
