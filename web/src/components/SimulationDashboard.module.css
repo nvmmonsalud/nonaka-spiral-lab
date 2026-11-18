@@ -1,0 +1,19 @@
+.layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap: 24px; }
+.main, .controls { min-width: 0; display: grid; align-content: start; gap: 16px; }
+.runs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+.canvas { width: 100%; height: 360px; display: block; border-radius: 8px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.field { display: grid; gap: 4px; }
+.field input[type="range"] { width: 100%; }
+.stats { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+.stats div { min-width: 70px; }
+.muted { color: var(--gray-700); font-size: 0.9rem; }
+.legend { display: flex; gap: 8px 20px; flex-wrap: wrap; margin: 18px 0; font-size: 12px; }
+.levels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 14px 0; }
+.levels dt { font-size: 11px; color: var(--gray-700); }
+.levels dd { font: 16px var(--mono); }
+.field :is(input[type="number"], select), .actions select { max-width: 100%; border: var(--border); background: var(--white); color: var(--slate); border-radius: 6px; padding: 8px; font: inherit; }
+.layout :is(input, button, select):focus-visible, .actions select:focus-visible { outline: 3px solid var(--rust); outline-offset: 3px; }
+.actions button:disabled { opacity: .55; cursor: not-allowed; }
+.events { max-height: 220px; overflow: auto; padding-left: 1.3rem; }
+@media (max-width: 850px) { .layout { grid-template-columns: 1fr; } }

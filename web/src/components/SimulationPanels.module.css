@@ -1,0 +1,24 @@
+.panel { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--gray-300); min-width: 0; }
+.header { display: flex; align-items: start; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.header h2 { font-size: 23px; margin-bottom: 4px; }
+.hint { color: var(--gray-700); font-size: 13px; max-width: 65ch; margin: 6px 0 14px; }
+.select { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 13px; margin: 12px 0; }
+.select select { background: var(--white); color: var(--slate); border: var(--border); border-radius: 6px; padding: 8px; font: inherit; max-width: 100%; }
+.chart { width: 100%; height: auto; display: block; overflow: visible; font: 12px var(--sans); color: var(--gray-700); }
+.axis { stroke: var(--gray-300); stroke-width: 1; }
+.primary { stroke: var(--rust); fill: none; stroke-width: 2.5; }
+.comparison { stroke: var(--slate); stroke-dasharray: 7 5; fill: none; stroke-width: 2.5; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; margin: 4px 0 10px; }
+.swatch { display: inline-block; width: 24px; height: 0; vertical-align: middle; margin-right: 6px; border-top: 3px solid var(--rust); }
+.dash { border-top: 3px dashed var(--slate); }
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 12px; margin: 16px 0; }
+.summary dt, .details dt { font-size: 12px; color: var(--gray-700); }
+.summary dd { font-family: var(--mono); font-size: 16px; margin-top: 4px; }
+.details { display: grid; grid-template-columns: minmax(110px, 1fr) 1fr; gap: 6px 12px; font-size: 14px; margin: 12px 0 18px; }
+.details dd { margin: 0; overflow-wrap: anywhere; }
+.description { font-size: 13px; margin: 12px 0; }
+.table { overflow: auto; max-height: 280px; margin-top: 16px; }
+.table table { min-width: 0; }
+.table caption { text-align: left; padding: 8px; }
+.panel :is(button, select):focus-visible { outline: 3px solid var(--rust); outline-offset: 3px; }
+@media (max-width: 600px) { .header { flex-direction: column; } .chart { font-size: 14px; } }

@@ -183,7 +183,7 @@ export function exportConfig(params: SimParams): string {
  * answering, so a duplicate found ahead of later malformed syntax is still reported
  * as a duplicate. Both inputs are rejected either way; only the message differs.
  */
-function findRepeatedKey(text: string): string | null {
+export function findRepeatedKey(text: string): string | null {
   interface Frame {
     kind: "object" | "array";
     keys: Set<string>;
