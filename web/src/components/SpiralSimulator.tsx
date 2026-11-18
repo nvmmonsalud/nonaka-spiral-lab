@@ -131,7 +131,7 @@ export default function SpiralSimulator() {
   </div>;
   return <>
     <div className="hero" lang={locale}><div className="inner"><div className={styles.actions}><label>{t("language")} <select value={locale} onChange={e => setLocale(e.target.value as Locale)}><option value="en">English</option><option value="ja">日本語</option></select></label></div><h1>{t("title")}</h1><p className="sub">{t("intro")}</p><p>{t("illustrative")}</p></div></div>
-    <nav lang={locale}><div className="inner"><Link href="/">{t("home")}</Link><Link href="/research">{t("research")}</Link></div></nav>
+    <nav lang={locale}><div className="inner"><Link href="/">{t("home")}</Link><Link href="/workshop">{t("manualWorkshop")}</Link><Link href="/research">{t("research")}</Link></div></nav>
     <section lang={locale}><GuidedWorkshop locale={locale} /><p className={styles.legend}>{["legendHuman", "legendAgent", "legendCorrupted", "legendLevel"].map(key => <span key={key}>{t(key)}</span>)}</p><div className={styles.layout}>
       <div className={styles.main}><div className={styles.actions}><button className="btn" onClick={pause}>{t(running ? "pause" : "resume")}</button><button className="btn ghost" onClick={step} disabled={running}>{t("step")}</button><button className="btn ghost" onClick={() => resetWith(paramsRef.current, comparisonParamsRef.current, seedRef.current)}>{t("reset")}</button><span>{t(running ? "running" : "paused")} · {(runs.primary.tick / TICKS_PER_SECOND).toFixed(1)} {t("seconds")}</span></div>
         <div className={styles.runs}>{panel(runs.primary, false)}{compare && panel(runs.comparison, true)}</div>

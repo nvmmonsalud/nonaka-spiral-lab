@@ -30,6 +30,7 @@ export default function Home() {
         <div className="inner">
           <Link href="/">Home</Link>
           <Link href="/simulator">Simulator</Link>
+          <Link href="/workshop">Manual Workshop / <span lang="ja">手動ワークショップ</span></Link>
           <Link href="/research">Research</Link>
           <Link href="https://github.com/nvmmonsalud/nonaka-spiral-lab" target="_blank" rel="noopener noreferrer">GitHub</Link>
         </div>
