@@ -1,424 +1,164 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import presetsData from "../../data/presets.json";
-import ConfigControls, { type ConfigNotice } from "@/components/ConfigControls";
-import { DEFAULT_PARAMS, PARAM_SPECS, findMatchingPresetId, parseParams } from "@/lib/sim-config";
-import {
-  MAX_LEVEL,
-  QUADRANTS,
-  clamp,
-  countLevels,
-  createParticle,
-  levelCountsEqual,
-  meanLevel,
-  stepParticle,
-  type ConvertOutcome,
-  type LevelCounts,
-  type Particle,
-  type Quad,
-  type SimParams,
-} from "@/lib/spiral-engine";
+import ConfigControls, { type ConfigNotice } from "./ConfigControls";
+import GuidedWorkshop from "./GuidedWorkshop";
+import HistoryChart from "./HistoryChart";
+import ParticleInspector from "./ParticleInspector";
+import SimulationCanvas from "./SimulationCanvas";
+import { DEFAULT_PARAMS, PARAM_KEYS, PARAM_SPECS, findMatchingPresetId, parseParams, type ParamKey } from "../lib/sim-config";
+import { parseRunSeed } from "../lib/run-config";
+import { createSimulation, DEFAULT_SEED, getSimulationSample, stepSimulation, TICKS_PER_SECOND, type SimulationState } from "../lib/simulation";
+import { getEventCopy, getPresetCopy, translate, type Locale } from "../lib/simulator-copy";
+import type { SimParams } from "../lib/spiral-engine";
+import styles from "./SimulationDashboard.module.css";
 
-type Preset = (typeof presetsData.presets)[number];
-
-const QUADRANT_COLORS: Record<Quad, string> = {
-  S: "#E3DACC",
-  E: "#F3D9CE",
-  C: "#DCE3D0",
-  I: "#F0EEE6",
-};
-
-interface EventLog {
-  id: number;
-  t: string;
-  msg: string;
-  kind: "ok" | "warn" | "bad" | "info";
-}
-
-let nextId = 1;
+type Runs = { primary: SimulationState; comparison: SimulationState };
+const makeRuns = (a: SimParams, b: SimParams, seed: number): Runs => ({ primary: createSimulation(a, seed), comparison: createSimulation(b, seed) });
 
 export default function SpiralSimulator() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const particlesRef = useRef<Particle[]>([]);
-  const paramsRef = useRef<SimParams>(DEFAULT_PARAMS);
-  const rafRef = useRef<number | null>(null);
+  const [locale, setLocale] = useState<Locale>("en");
+  const t = (key: string) => translate(locale, key);
   const [params, setParams] = useState<SimParams>(DEFAULT_PARAMS);
-  const [running, setRunning] = useState(true);
-  const [activePreset, setActivePreset] = useState<string>("notco");
-  const [levelCounts, setLevelCounts] = useState({ l1: 0, l2: 0, l3: 0, l4: 0 });
-  const [cycleCount, setCycleCount] = useState(0);
-  const [spiralScore, setSpiralScore] = useState(0);
-  const [events, setEvents] = useState<EventLog[]>([
-    { id: 0, t: "00:00", msg: "Spiral initialized. Add knowledge, tune ba, watch the loop.", kind: "info" },
-  ]);
-  const [failureCount, setFailureCount] = useState(0);
-  const eventCountRef = useRef(1);
-  const lastCountsRef = useRef<LevelCounts>({ l1: 0, l2: 0, l3: 0, l4: 0 });
-  const cycleRef = useRef(0);
-  const scoreRef = useRef(0);
-  const failureRef = useRef(0);
-  const urlLoadedRef = useRef(false);
+  const [comparisonParams, setComparisonParams] = useState<SimParams>(DEFAULT_PARAMS);
+  const paramsRef = useRef(params), comparisonParamsRef = useRef(comparisonParams);
+  const [seed, setSeed] = useState(DEFAULT_SEED);
+  const seedRef = useRef(seed);
+  const [seedInput, setSeedInput] = useState(String(DEFAULT_SEED));
+  const [running, setRunning] = useState(false);
+  const [compare, setCompare] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [comparisonSelectedId, setComparisonSelectedId] = useState<number | null>(null);
   const [notice, setNotice] = useState<ConfigNotice | null>(null);
+  const generationRef = useRef(0);
+  const [generation, setGeneration] = useState(0);
+  const [runs, setRuns] = useState<Runs>(() => makeRuns(DEFAULT_PARAMS, DEFAULT_PARAMS, DEFAULT_SEED));
+  const runsRef = useRef(runs);
+  const initialized = useRef(false);
 
-  const pushEvent = useCallback((msg: string, kind: EventLog["kind"]) => {
-    const now = new Date();
-    const t = `${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
-    eventCountRef.current += 1;
-    const ev = { id: eventCountRef.current, t, msg, kind };
-    setEvents((prev) => [ev, ...prev].slice(0, 8));
-    if (kind === "bad") {
-      failureRef.current += 1;
-      setFailureCount(failureRef.current);
-    }
+  const resetWith = useCallback((a: SimParams, b: SimParams, nextSeed: number) => {
+    generationRef.current += 1; setGeneration(generationRef.current);
+    paramsRef.current = a; comparisonParamsRef.current = b; seedRef.current = nextSeed;
+    setParams(a); setComparisonParams(b); setSeed(nextSeed); setSeedInput(String(nextSeed));
+    const next = makeRuns(a, b, nextSeed); runsRef.current = next; setRuns(next);
+    setSelectedId(null); setComparisonSelectedId(null);
   }, []);
+  const applyConfig = useCallback((next: SimParams) => {
+    resetWith(next, comparisonParamsRef.current, seedRef.current); setNotice(null);
+  }, [resetWith]);
+  const applyReplay = useCallback((next: SimParams, nextSeed: number, message: string) => {
+    resetWith(next, comparisonParamsRef.current, nextSeed); setNotice({ kind: "ok", text: message });
+  }, [resetWith]);
+  const showNotice = useCallback((kind: ConfigNotice["kind"], text: string) => setNotice({ kind, text }), []);
 
-  // (Re)build the particle population from params
-  const rebuildParticles = useCallback(() => {
-    const p = paramsRef.current;
-    const existing = particlesRef.current;
-    // Keep existing non-corrupted particles; resize the population to target counts.
-    const humans = existing.filter((pt) => pt.kind === "human");
-    const agents = existing.filter((pt) => pt.kind === "agent");
-    const target = [...humans.slice(0, p.humans), ...agents.slice(0, p.agents)];
-    while (target.filter((pt) => pt.kind === "human").length < p.humans) {
-      target.push(createParticle(nextId++, "human"));
-    }
-    while (target.filter((pt) => pt.kind === "agent").length < p.agents) {
-      target.push(createParticle(nextId++, "agent"));
-    }
-    particlesRef.current = target;
-  }, []);
-
-  // Update params + persist to ref for the animation loop
-  const updateParam = useCallback((key: keyof SimParams, value: number) => {
-    const next = { ...paramsRef.current, [key]: value };
-    paramsRef.current = next;
-    setParams(next);
-    setActivePreset("");
-    rebuildParticles();
-  }, [rebuildParticles]);
-
-  // The one path every whole-configuration change takes: preset buttons, a shared
-  // link, an imported file. Ref first (the RAF loop reads it), then the UI mirror.
-  const applyConfig = useCallback((next: SimParams, message: string, presetId?: string) => {
-    paramsRef.current = next;
-    setParams(next);
-    setActivePreset(presetId ?? findMatchingPresetId(next, presetsData.presets));
-    setNotice(null);
-    rebuildParticles();
-    pushEvent(message, "info");
-  }, [rebuildParticles, pushEvent]);
-
-  const applyPreset = useCallback((preset: Preset) => {
-    applyConfig({ ...preset.initial }, `Preset loaded: ${preset.name} — ${preset.tagline}`, preset.id);
-  }, [applyConfig]);
-
-  // Visible feedback for copy/export/import and rejected links. Errors also go to the
-  // event log as "warn", not "bad", so they do not count as simulation failures.
-  const showNotice = useCallback((kind: ConfigNotice["kind"], text: string) => {
-    setNotice({ kind, text });
-    pushEvent(text, kind === "error" ? "warn" : "info");
-  }, [pushEvent]);
-
-  // Apply what the engine reported to the UI mirrors (refs first, then state)
-  const applyOutcome = useCallback((outcome: ConvertOutcome) => {
-    if (outcome.cycles > 0) {
-      cycleRef.current += outcome.cycles;
-      setCycleCount(cycleRef.current);
-      scoreRef.current += outcome.score;
-      setSpiralScore(scoreRef.current);
-    }
-    outcome.events.forEach((ev) => pushEvent(ev.msg, ev.kind));
-  }, [pushEvent]);
-
-  // Animation loop
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let w = 0, h = 0;
-    const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      w = rect.width;
-      h = rect.height;
-      canvas.width = Math.floor(w * dpr);
-      canvas.height = Math.floor(h * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-    resize();
-    window.addEventListener("resize", resize);
-
-    let last = performance.now();
-
-    const tick = (now: number) => {
-      const dt = Math.min((now - last) / 1000, 0.05);
-      last = now;
-      const parts = particlesRef.current;
-
-      ctx.clearRect(0, 0, w, h);
-
-      // Draw quadrant zones
-      QUADRANTS.forEach((q) => {
-        const x0 = q.x === 0 ? 10 : w / 2 + 5;
-        const y0 = q.y === 0 ? 10 : h / 2 + 5;
-        const x1 = q.x === 0 ? w / 2 - 5 : w - 10;
-        const y1 = q.y === 0 ? h / 2 - 5 : h - 10;
-        ctx.fillStyle = QUADRANT_COLORS[q.key];
-        ctx.strokeStyle = "#D1CFC5";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.roundRect(x0, y0, x1 - x0, y1 - y0, 12);
-        ctx.fill();
-        ctx.stroke();
-
-        // Quadrant label
-        const qx = (x0 + x1) / 2;
-        const qy = y0 + 26;
-        ctx.fillStyle = q.key === "E" ? "#B04A3F" : "#3D3D3A";
-        ctx.font = "600 12px ui-monospace, Menlo, monospace";
-        ctx.textAlign = "center";
-        ctx.fillText(q.name, qx, qy);
-        ctx.fillStyle = "#87867F";
-        ctx.font = "10px ui-monospace, Menlo, monospace";
-        ctx.fillText(`${q.from}→${q.to}`, qx, qy + 14);
-      });
-
-      // Level rails (ontological escalation indicator)
-      const railY = h - 8;
-      ctx.fillStyle = "#D1CFC5";
-      ctx.fillRect(10, railY, w - 20, 4);
-      const filled = clamp((meanLevel(parts) - 1) / (MAX_LEVEL - 1), 0, 1);
-      ctx.fillStyle = "#788C5D";
-      ctx.fillRect(10, railY, (w - 20) * filled, 4);
-      ctx.fillStyle = "#87867F";
-      ctx.font = "10px ui-monospace, Menlo, monospace";
-      ctx.textAlign = "left";
-      ctx.fillText("MEAN ONTOLOGICAL LEVEL", 10, railY - 6);
-
-      // Particles
-      parts.forEach((pt) => {
-        const q = QUADRANTS.find((qq) => qq.key === pt.quad) || QUADRANTS[0];
-        const tx = q.ax * w + (Math.random() - 0.5) * w * 0.08;
-        const ty = q.ay * h + (Math.random() - 0.5) * h * 0.08;
-        const speed = 1.6 + pt.level * 0.3;
-        pt.x += (tx - pt.x) * Math.min(dt * speed, 0.2);
-        pt.y += (ty - pt.y) * Math.min(dt * speed, 0.2);
-
-        // Conversion when close to target; each particle keeps its own cooldown
-        const arrived = Math.hypot(tx - pt.x, ty - pt.y) < 12;
-        const outcome = stepParticle(pt, dt, arrived, paramsRef.current);
-        if (outcome) applyOutcome(outcome);
-
-        const radius = pt.size * (pt.level > 2 ? 1.2 : 1);
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
-        if (pt.corrupted) {
-          ctx.fillStyle = "#B04A3F";
-          ctx.strokeStyle = "#8F3A31";
-        } else if (pt.kind === "agent") {
-          ctx.fillStyle = pt.level >= 3 ? "#D97757" : "#E8A084";
-          ctx.strokeStyle = "#D97757";
-        } else {
-          ctx.fillStyle = pt.level >= 3 ? "#788C5D" : "#A3B48C";
-          ctx.strokeStyle = "#788C5D";
-        }
-        ctx.lineWidth = 1.5;
-        ctx.fill();
-        ctx.stroke();
-
-        // Level ring for high-level knowledge
-        if (pt.level >= 3) {
-          ctx.beginPath();
-          ctx.arc(pt.x, pt.y, radius + 3, 0, Math.PI * 2);
-          ctx.strokeStyle = pt.kind === "agent" ? "#D97757" : "#788C5D";
-          ctx.setLineDash([3, 3]);
-          ctx.stroke();
-          ctx.setLineDash([]);
-        }
-      });
-
-      // Only touch React state when the level histogram actually changed
-      const counts = countLevels(parts);
-      if (!levelCountsEqual(counts, lastCountsRef.current)) {
-        lastCountsRef.current = counts;
-        setLevelCounts(counts);
-      }
-
-      rafRef.current = requestAnimationFrame(tick);
-    };
-
-    if (running) {
-      rafRef.current = requestAnimationFrame(tick);
-    }
-
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      window.removeEventListener("resize", resize);
-    };
-  }, [running, applyOutcome]);
-
-  // Initial rebuild on mount
-  useEffect(() => {
-    rebuildParticles();
-  }, [rebuildParticles]);
-
-  // Load a shared configuration from the URL once, after hydration. Reading
-  // window.location here (not useSearchParams) keeps /simulator statically
-  // prerendered with the full UI in the HTML; the default preset is what the
-  // server renders and this swaps the shared values in.
-  const loadSharedLink = useCallback(() => {
+    if (initialized.current) return;
+    initialized.current = true;
     const parsed = parseParams(window.location.search, DEFAULT_PARAMS);
-    if (!parsed.ok) {
-      showNotice("error", `Ignored the shared link: ${parsed.error}`);
-    } else if (parsed.value) {
-      applyConfig(parsed.value, "Loaded the configuration from the shared link.");
+    const parsedSeed = parseRunSeed(window.location.search);
+    if (!parsed.ok || !parsedSeed.ok) {
+      // URL hydration intentionally updates the prerendered defaults once.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setNotice({ kind: "error", text: !parsed.ok ? parsed.error : !parsedSeed.ok ? parsedSeed.error : "" });
+    } else if (parsed.value || parsedSeed.value !== null) {
+      resetWith(parsed.value ?? DEFAULT_PARAMS, DEFAULT_PARAMS, parsedSeed.value ?? DEFAULT_SEED);
     }
-  }, [applyConfig, showNotice]);
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) setRunning(true);
+  }, [resetWith]);
 
   useEffect(() => {
-    if (urlLoadedRef.current) return; // StrictMode runs mount effects twice in dev
-    urlLoadedRef.current = true;
-    loadSharedLink();
-  }, [loadSharedLink]);
-
-  // "Link copied" style notices fade after a few seconds; errors stay until the next action.
-  useEffect(() => {
-    if (notice?.kind !== "ok") return;
-    const timer = setTimeout(() => setNotice(null), 4000);
-    return () => clearTimeout(timer);
-  }, [notice]);
-
-  const toggleRun = () => setRunning((r) => !r);
-  const resetSpiral = () => {
-    particlesRef.current = [];
-    cycleRef.current = 0;
-    scoreRef.current = 0;
-    failureRef.current = 0;
-    setCycleCount(0);
-    setSpiralScore(0);
-    setFailureCount(0);
-    rebuildParticles();
-    pushEvent("Spiral reset. Fresh knowledge, fresh context.", "info");
+    if (!running) return;
+    let frame = 0, last = 0, remainder = 0, lastPaint = 0;
+    const tick = (now: number) => {
+      if (last) {
+        remainder += Math.min((now - last) / 1000, 0.25) * TICKS_PER_SECOND;
+        const steps = Math.floor(remainder);
+        if (steps) {
+          remainder -= steps;
+          runsRef.current = { primary: stepSimulation(runsRef.current.primary, steps), comparison: stepSimulation(runsRef.current.comparison, steps) };
+          if (now - lastPaint >= 100) { setRuns(runsRef.current); lastPaint = now; }
+        }
+      }
+      last = now; frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [running]);
+  const pause = () => { setRunning(!running); setRuns(runsRef.current); };
+  const step = () => {
+    const next = { primary: stepSimulation(runsRef.current.primary), comparison: stepSimulation(runsRef.current.comparison) };
+    runsRef.current = next; setRuns(next);
   };
-
-  return (
-    <div className="sim-layout">
-      <div>
-        <div className="card" style={{ padding: 12 }}>
-          <canvas
-            ref={canvasRef}
-            style={{ width: "100%", height: 420, display: "block", borderRadius: 8 }}
-          />
-        </div>
-        <div className="stats">
-          <div className="stat">
-            <p className="mono-label">Spiral score</p>
-            <p className="num">{spiralScore}</p>
-          </div>
-          <div className="stat">
-            <p className="mono-label">Cycles</p>
-            <p className="num">{cycleCount}</p>
-          </div>
-          <div className="stat" style={{ borderLeft: "4px solid var(--rust)" }}>
-            <p className="mono-label">Failures</p>
-            <p className="num" style={{ color: "var(--rust)" }}>{failureCount}</p>
-          </div>
-        </div>
-        <div className="stats">
-          <div className="stat"><p className="mono-label">L1 · Individual</p><p className="num">{levelCounts.l1}</p></div>
-          <div className="stat"><p className="mono-label">L2 · Group</p><p className="num">{levelCounts.l2}</p></div>
-          <div className="stat"><p className="mono-label">L3 · Org</p><p className="num">{levelCounts.l3}</p></div>
-          <div className="stat"><p className="mono-label">L4 · Inter-org</p><p className="num">{levelCounts.l4}</p></div>
-        </div>
+  const applySeed = () => {
+    if (!/^\d+$/.test(seedInput) || Number(seedInput) > 4294967295) { setNotice({ kind: "error", text: t("invalidSeed") }); return; }
+    resetWith(paramsRef.current, comparisonParamsRef.current, Number(seedInput)); setNotice(null);
+  };
+  const changeParam = (which: "primary" | "comparison", key: ParamKey, value: number) => {
+    const a = which === "primary" ? { ...paramsRef.current, [key]: value } : paramsRef.current;
+    const b = which === "comparison" ? { ...comparisonParamsRef.current, [key]: value } : comparisonParamsRef.current;
+    resetWith(a, b, seedRef.current);
+  };
+  const changePreset = (which: "primary" | "comparison", id: string) => {
+    const preset = presetsData.presets.find(p => p.id === id);
+    if (preset) resetWith(which === "primary" ? { ...preset.initial } : paramsRef.current, which === "comparison" ? { ...preset.initial } : comparisonParamsRef.current, seedRef.current);
+  };
+  const toggleComparison = (enabled: boolean) => {
+    if (enabled) {
+      // Revealing a comparison preserves the observation the user just made.
+      // The immutable state can be shared until the next simulation step clones it.
+      const nextParams = { ...paramsRef.current };
+      comparisonParamsRef.current = nextParams;
+      setComparisonParams(nextParams);
+      const next = { primary: runsRef.current.primary, comparison: { ...runsRef.current.primary, params: nextParams } };
+      runsRef.current = next;
+      setRuns(next);
+      setComparisonSelectedId(null);
+      generationRef.current += 1;
+      setGeneration(generationRef.current);
+    }
+    setCompare(enabled);
+  };
+  const config = (which: "primary" | "comparison", values: SimParams) => <ConfigFields which={which} values={values} locale={locale} onPreset={changePreset} onChange={changeParam} />;
+  const panel = (state: SimulationState, comparison: boolean) => <div className="card">
+    <h2>{t(comparison ? "comparisonRun" : "primaryRun")}</h2>
+    <SimulationCanvas particles={state.particles} selectedId={comparison ? comparisonSelectedId : selectedId} onSelect={comparison ? setComparisonSelectedId : setSelectedId} locale={locale} />
+    <div className={styles.stats}>{(["score", "cycles", "failures", "repairs"] as const).map(k => <div key={k}><span className="mono-label">{t(k)}</span><p className="num">{state[k]}</p></div>)}</div>
+    <dl className={styles.levels}>{(["individual", "group", "organization", "interOrganization"] as const).map((key, i) => <div key={key}><dt>{`L${i + 1} · ${t(key)}`}</dt><dd>{getSimulationSample(state)[`l${i + 1}` as "l1" | "l2" | "l3" | "l4"]}</dd></div>)}</dl>
+    <ParticleInspector particles={state.particles} selectedId={comparison ? comparisonSelectedId : selectedId} onSelect={comparison ? setComparisonSelectedId : setSelectedId} locale={locale} />
+    <h3>{t("eventLog")}</h3>{state.events.length ? <ol className={styles.events}>{state.events.slice().reverse().map(event => <li key={event.id}>{(event.tick / TICKS_PER_SECOND).toFixed(1)} {t("seconds")} · {getEventCopy(locale, event)}</li>)}</ol> : <p>{t("noEvents")}</p>}
+  </div>;
+  return <>
+    <div className="hero" lang={locale}><div className="inner"><div className={styles.actions}><label>{t("language")} <select value={locale} onChange={e => setLocale(e.target.value as Locale)}><option value="en">English</option><option value="ja">日本語</option></select></label></div><h1>{t("title")}</h1><p className="sub">{t("intro")}</p><p>{t("illustrative")}</p></div></div>
+    <nav lang={locale}><div className="inner"><Link href="/">{t("home")}</Link><Link href="/research">{t("research")}</Link></div></nav>
+    <section lang={locale}><GuidedWorkshop locale={locale} /><p className={styles.legend}>{["legendHuman", "legendAgent", "legendCorrupted", "legendLevel"].map(key => <span key={key}>{t(key)}</span>)}</p><div className={styles.layout}>
+      <div className={styles.main}><div className={styles.actions}><button className="btn" onClick={pause}>{t(running ? "pause" : "resume")}</button><button className="btn ghost" onClick={step} disabled={running}>{t("step")}</button><button className="btn ghost" onClick={() => resetWith(paramsRef.current, comparisonParamsRef.current, seedRef.current)}>{t("reset")}</button><span>{t(running ? "running" : "paused")} · {(runs.primary.tick / TICKS_PER_SECOND).toFixed(1)} {t("seconds")}</span></div>
+        <div className={styles.runs}>{panel(runs.primary, false)}{compare && panel(runs.comparison, true)}</div>
+        <HistoryChart samples={runs.primary.history} comparisonSamples={compare ? runs.comparison.history : undefined} locale={locale} seed={seed} />
       </div>
-
-      <div className="controls">
-        <div className="preset-grid">
-          {presetsData.presets.map((preset) => (
-            <button
-              key={preset.id}
-              className={`preset-btn ${activePreset === preset.id ? "active" : ""}`}
-              onClick={() => applyPreset(preset)}
-              title={preset.description}
-            >
-              {preset.icon} {preset.name}
-            </button>
-          ))}
-        </div>
-
-        <div className="control-row">
-          <label>Humans <span className="val">{params.humans}</span></label>
-          <input type="range" min={PARAM_SPECS.humans.min} max={PARAM_SPECS.humans.max} value={params.humans}
-            onChange={(e) => updateParam("humans", Number(e.target.value))} />
-        </div>
-        <div className="control-row">
-          <label>AI Agents <span className="val">{params.agents}</span></label>
-          <input type="range" min={PARAM_SPECS.agents.min} max={PARAM_SPECS.agents.max} value={params.agents}
-            onChange={(e) => updateParam("agents", Number(e.target.value))} />
-        </div>
-        <div className="control-row">
-          <label>Ba · Redundancy <span className="val">{Math.round(params.baRedundancy * 100)}%</span></label>
-          <input type="range" min={0} max={100} value={params.baRedundancy * 100}
-            onChange={(e) => updateParam("baRedundancy", Number(e.target.value) / 100)} />
-        </div>
-        <div className="control-row">
-          <label>Ba · Creative chaos <span className="val">{Math.round(params.baChaos * 100)}%</span></label>
-          <input type="range" min={0} max={100} value={params.baChaos * 100}
-            onChange={(e) => updateParam("baChaos", Number(e.target.value) / 100)} />
-        </div>
-        <div className="control-row">
-          <label>Ba · Autonomy <span className="val">{Math.round(params.baAutonomy * 100)}%</span></label>
-          <input type="range" min={0} max={100} value={params.baAutonomy * 100}
-            onChange={(e) => updateParam("baAutonomy", Number(e.target.value) / 100)} />
-        </div>
-        <div className="control-row">
-          <label>Feedback loop <span className="val">{Math.round(params.feedbackRate * 100)}%</span></label>
-          <input type="range" min={0} max={100} value={params.feedbackRate * 100}
-            onChange={(e) => updateParam("feedbackRate", Number(e.target.value) / 100)} />
-        </div>
-        <div className="control-row">
-          <label>Machine transfer <span className="val">{Math.round(params.machineTransfer * 100)}%</span></label>
-          <input type="range" min={0} max={100} value={params.machineTransfer * 100}
-            onChange={(e) => updateParam("machineTransfer", Number(e.target.value) / 100)} />
-        </div>
-        <div className="control-row">
-          <label>Hallucination risk <span className="val">{Math.round(params.hallucinationRisk * 100)}%</span></label>
-          <input type="range" min={0} max={100} value={params.hallucinationRisk * 100}
-            onChange={(e) => updateParam("hallucinationRisk", Number(e.target.value) / 100)} />
-        </div>
-
-        <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-          <button className="btn" onClick={toggleRun}>
-            {running ? "⏸ Pause" : "▶ Resume"}
-          </button>
-          <button className="btn ghost" onClick={resetSpiral}>↺ Reset</button>
-        </div>
-
-        <ConfigControls
-          getParams={() => paramsRef.current}
-          onApply={applyConfig}
-          onNotice={showNotice}
-          notice={notice}
-        />
-
-        <div className="card" style={{ marginTop: 8 }}>
-          <p className="mono-label">Event log</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
-            {events.map((ev) => (
-              <div key={ev.id} style={{ fontSize: 12, lineHeight: 1.4 }}>
-                <span style={{ fontFamily: "var(--mono)", color: "var(--gray-500)" }}>{ev.t}</span>{" "}
-                <span style={{ color: ev.kind === "bad" ? "var(--rust)" : ev.kind === "ok" ? "var(--olive)" : "var(--gray-700)" }}>
-                  {ev.msg}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className={styles.controls}><div className="card"><label className={styles.field}>{t("seed")}<input type="number" min="0" max="4294967295" step="1" value={seedInput} onChange={e => setSeedInput(e.target.value)} /></label><button className="btn ghost" onClick={applySeed}>{t("applySeed")}</button><p className={styles.muted}>{t("seed")}: {seed}. {t("sameSeed")}</p><label><input type="checkbox" checked={compare} onChange={e => toggleComparison(e.target.checked)} /> {t("compare")}</label></div>
+        {config("primary", params)}{compare && config("comparison", comparisonParams)}
+        <ConfigControls getParams={() => paramsRef.current} getSeed={() => seedRef.current} locale={locale} generation={generation} getGeneration={() => generationRef.current} onApply={applyConfig} onApplyReplay={applyReplay} onNotice={showNotice} notice={notice} />
       </div>
-    </div>
-  );
+    </div></section>
+  </>;
+}
+
+function ConfigFields({ which, values, locale, onPreset, onChange }: { which: "primary" | "comparison"; values: SimParams; locale: Locale; onPreset: (which: "primary" | "comparison", id: string) => void; onChange: (which: "primary" | "comparison", key: ParamKey, value: number) => void }) {
+  const t = (key: string) => translate(locale, key);
+  const presetId = findMatchingPresetId(values, presetsData.presets);
+  const presetCopy = presetId ? getPresetCopy(locale, presetId) : null;
+  return <div className="card">
+    <h3>{t(which === "primary" ? "primaryRun" : "comparisonRun")}</h3>
+    <label className={styles.field}>{t(which === "primary" ? "preset" : "comparisonPreset")}
+      <select value={presetId} onChange={e => onPreset(which, e.target.value)}>
+        <option value="">—</option>{presetsData.presets.map(p => <option key={p.id} value={p.id}>{getPresetCopy(locale, p.id).name}</option>)}
+      </select>
+    </label>
+    {presetCopy && <p className={styles.muted}><strong>{presetCopy.tagline}</strong><br />{presetCopy.description}</p>}
+    {PARAM_KEYS.map(key => <label key={key} className={styles.field}>{t(key)} <span>{PARAM_SPECS[key].integer ? values[key] : `${Math.round(values[key] * 100)}%`}</span>
+      <input type="range" min={PARAM_SPECS[key].min} max={PARAM_SPECS[key].max} step={PARAM_SPECS[key].integer ? 1 : 0.01} value={values[key]} onChange={e => onChange(which, key, Number(e.target.value))} />
+    </label>)}
+  </div>;
 }

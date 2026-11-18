@@ -1,0 +1,12 @@
+.workshop { background: var(--white); border: var(--border); border-radius: var(--radius-panel); padding: 20px; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.header h2 { font-size: 22px; margin: 0; }
+.body { display: grid; gap: 10px; margin-top: 16px; }
+.body h3 { margin: 0; }
+.body label { font-size: 13px; }
+.body textarea { width: 100%; min-width: 0; resize: vertical; border: var(--border); border-radius: var(--radius-row); padding: 10px; color: var(--slate); background: var(--ivory); font: inherit; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.button { border: 1.5px solid var(--slate); border-radius: var(--radius-row); background: var(--white); color: var(--slate); padding: 8px 12px; font: inherit; cursor: pointer; }
+.button:hover:not(:disabled) { border-color: var(--clay); color: var(--clay); }
+.button:focus-visible, .body textarea:focus-visible { outline: 3px solid var(--clay); outline-offset: 2px; }
+.button:disabled { opacity: .5; cursor: not-allowed; }

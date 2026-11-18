@@ -36,12 +36,35 @@ stalls, the green-milk context failure — then tune the levers:
 - Red = corrupted (false externalization) · Dashed ring = level 3+ knowledge
 - Each full SECI cycle escalates one ontological level (individual → group → org → inter-org)
 
+The simulator also supports reproducible workshop experiments:
+
+- **Seeded replay:** set an integer seed, pause, advance one tick, or reset. The same
+  seed, levers and engine version produce the same state after the same number of
+  ticks, regardless of canvas size. Any lever or seed change starts a fresh run.
+- **Comparison:** enable Compare to copy the current run into a second view,
+  preserving its history. Change one lever in run B, or select a different preset;
+  both runs reset and advance together. They share a starting seed, not a
+  controlled real-world experiment.
+- **History:** choose cycles, failures, corruption, repairs, mean level or score.
+  An accessible data table and CSV export include the retained history, up to 600
+  one-second samples (ten minutes).
+- **Particle inspector:** click a particle or select it with the keyboard to see
+  its quadrant, ontological level, corruption status and last transition.
+- **Guided workshop:** switch between English and Japanese, predict a bottleneck,
+  record observations and compare a changed condition. Notes stay only in memory
+  while the page remains open. Reduced-motion users start with the simulation paused.
+
+All outcomes are illustrative; they do not measure actual business performance
+or the behavior of a live AI system.
+
 Any setup can be shared or saved:
 
-- **Copy link** puts the eight lever values in the URL (`/simulator?humans=6&agents=3&...`)
-  and on your clipboard. Opening the link starts the simulation with exactly those values.
-- **Export JSON / Import JSON** saves a setup to a small file and loads it back. The file's
-  `initial` block has the same shape as an entry in `web/data/presets.json`.
+- **Copy link** puts run A's eight lever values and seed in the URL
+  (`/simulator?humans=6&agents=3&...&seed=42`) and on your clipboard.
+- **Export JSON / Import JSON** saves run A's configuration, seed and engine
+  version as `spiral-lab-replay.json`. The `initial` block retains the preset
+  parameter shape. Legacy v1 configuration files still load using the current
+  seed. Neither format stores a running snapshot, workshop notes, or run B.
 
 Links and files are checked strictly: a value outside a slider's range is rejected with a
 message, not quietly adjusted.
@@ -71,6 +94,10 @@ npm install
 npm run dev
 # → http://localhost:3000
 ```
+
+To verify locally, run `npm test`, `npm run lint`, `npm run typecheck` and
+`npm run build` from `web/`. Browser checks use the production build:
+`npx playwright install chromium`, then `npm run test:e2e`.
 
 ## Deploy your own
 
